@@ -28,6 +28,7 @@
     <string name="filter_refine">高级筛选</string>
     <string name="view_filter_results">查看筛选结果</string>
     <string name="play_now">立即播放</string>
+    <string name="fullscreen">全屏</string>
     <string name="add_cache">加入缓存</string>
     <string name="detail_favorite">收藏</string>
     <string name="detail_favorited">已收藏</string>

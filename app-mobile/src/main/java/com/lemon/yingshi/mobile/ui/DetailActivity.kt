@@ -15,6 +15,8 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
@@ -51,6 +53,21 @@ class DetailActivity : AppCompatActivity() {
     private var lastPlaySourceIndex: Int? = null
     private var currentEpisodes: List<EpisodeItem> = emptyList()
 
+    /** 内嵌播放器（顶部固定） */
+    private var inlinePlayer: ExoPlayer? = null
+    private var inlineTarget: InlinePlaybackTarget? = null
+
+    /** 内嵌播放所需的播放信息（两种 PlaybackInfo 字段相同，统一收敛） */
+    private data class InlinePlaybackTarget(
+        val videoUrl: String,
+        val title: String?,
+        val episodeTitle: String?,
+        val mediaId: String?,
+        val episodeId: String?,
+        val startPosition: Long,
+        val posterUrl: String?
+    )
+
     private val playerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
@@ -76,12 +93,15 @@ class DetailActivity : AppCompatActivity() {
         }
 
         val mediaId = intent.getStringExtra(EXTRA_MEDIA_ID).orEmpty()
-        binding.backButton.setOnClickListener { finish() }
+        binding.playerBackButton.setOnClickListener { onDetailBack() }
+        binding.coverPlayButton.setOnClickListener { playResume() }
+        binding.playerCover.setOnClickListener { playResume() }
+        binding.playerFullscreenButton.setOnClickListener { enterFullscreen() }
+        onBackPressedDispatcher.addCallback(this) { onDetailBack() }
         binding.plotToggle.setOnClickListener { togglePlot() }
         binding.actorsToggle.setOnClickListener { toggleActors() }
         binding.favoriteButton.setOnClickListener { viewModel.toggleFavorite() }
         binding.cacheButton.setOnClickListener { showOfflineCachePicker() }
-        binding.playButton.setOnClickListener { playResume() }
         binding.episodePrevPage.setOnClickListener {
             if (episodeCurrentPage > 0) {
                 episodeCurrentPage--
@@ -117,7 +137,8 @@ class DetailActivity : AppCompatActivity() {
                     binding.favoriteButton.setImageResource(
                         if (favorite) R.drawable.ic_detail_favorite_filled else R.drawable.ic_detail_favorite
                     )
-                    binding.favoriteLabel.text = getString(
+                    // 二改：收藏按钮改为标题行图标（无文字标签），状态走 contentDescription
+                    binding.favoriteButton.contentDescription = getString(
                         if (favorite) R.string.detail_favorited else R.string.detail_favorite
                     )
                 }
@@ -131,7 +152,13 @@ class DetailActivity : AppCompatActivity() {
         binding.loadingIndicator.isVisible = false
         val media = state.media
         binding.detailTitle.text = media.title
-        binding.heroImage.load(media.backdropUrl ?: media.posterUrl) {
+        // 封面：海报即封面。背景小尺寸加载后放大 = 自然模糊；前景原图居中
+        val coverUrl = media.backdropUrl ?: media.posterUrl
+        binding.coverBg.load(coverUrl) {
+            size(54, 96)
+            crossfade(false)
+        }
+        binding.coverPoster.load(coverUrl) {
             crossfade(true)
             placeholder(R.drawable.bg_poster_card)
         }
@@ -377,16 +404,17 @@ class DetailActivity : AppCompatActivity() {
             }
             val info = viewModel.getResumePlaybackInfo() ?: return@launch
             if (info.videoUrl.isBlank()) return@launch
-            PlayerLauncher.createIntent(
-                context = this@DetailActivity,
-                videoUrl = info.videoUrl,
-                title = info.title,
-                episodeTitle = info.episodeTitle,
-                mediaId = info.mediaId,
-                episodeId = info.episodeId,
-                startPosition = info.startPosition,
-                posterUrl = info.posterUrl
-            ).also { playerLauncher.launch(it) }
+            startInlinePlayback(
+                InlinePlaybackTarget(
+                    videoUrl = info.videoUrl,
+                    title = info.title,
+                    episodeTitle = info.episodeTitle,
+                    mediaId = info.mediaId,
+                    episodeId = info.episodeId,
+                    startPosition = info.startPosition,
+                    posterUrl = info.posterUrl
+                )
+            )
         }
     }
 
@@ -400,17 +428,85 @@ class DetailActivity : AppCompatActivity() {
                 episode.title,
                 mediaTitle
             )
-            PlayerLauncher.createIntent(
-                context = this@DetailActivity,
-                videoUrl = info.videoUrl,
-                title = info.title,
-                episodeTitle = displayEpisodeTitle,
-                mediaId = info.mediaId,
-                episodeId = info.episodeId,
-                startPosition = info.startPosition,
-                posterUrl = info.posterUrl
-            ).also { playerLauncher.launch(it) }
+            startInlinePlayback(
+                InlinePlaybackTarget(
+                    videoUrl = info.videoUrl,
+                    title = info.title,
+                    episodeTitle = displayEpisodeTitle,
+                    mediaId = info.mediaId,
+                    episodeId = info.episodeId,
+                    startPosition = info.startPosition,
+                    posterUrl = info.posterUrl
+                )
+            )
         }
+    }
+
+    /**
+     * 二改：顶部内嵌播放。播放器固定在详情页顶部（海报即封面），
+     * 不再跳转全屏 PlayerActivity；全屏按钮可携带当前进度进入全屏。
+     */
+    private fun startInlinePlayback(target: InlinePlaybackTarget) {
+        inlineTarget = target
+        // 隐藏封面，显示播放器
+        binding.playerCover.isVisible = false
+        binding.detailPlayerView.isVisible = true
+        binding.playerFullscreenButton.isVisible = true
+        // 重建播放器（切集时直接换 media）
+        binding.detailPlayerView.player = null
+        inlinePlayer?.release()
+        val player = ExoPlayer.Builder(this).build()
+        inlinePlayer = player
+        binding.detailPlayerView.player = player
+        player.setMediaItem(MediaItem.fromUri(target.videoUrl))
+        if (target.startPosition > 0) player.seekTo(target.startPosition)
+        player.prepare()
+        player.play()
+    }
+
+    private fun stopInlinePlayback() {
+        binding.detailPlayerView.player = null
+        inlinePlayer?.release()
+        inlinePlayer = null
+        inlineTarget = null
+        binding.detailPlayerView.isVisible = false
+        binding.playerFullscreenButton.isVisible = false
+        binding.playerCover.isVisible = true
+    }
+
+    private fun enterFullscreen() {
+        val target = inlineTarget ?: return
+        val position = inlinePlayer?.currentPosition ?: 0L
+        stopInlinePlayback()
+        playerLauncher.launch(
+            PlayerLauncher.createIntent(
+                context = this,
+                videoUrl = target.videoUrl,
+                title = target.title,
+                episodeTitle = target.episodeTitle,
+                mediaId = target.mediaId,
+                episodeId = target.episodeId,
+                startPosition = position,
+                posterUrl = target.posterUrl
+            )
+        )
+    }
+
+    private fun onDetailBack() {
+        // 内嵌播放中：先关闭播放器回到封面；否则退出详情页
+        if (inlinePlayer != null) stopInlinePlayback() else finish()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        inlinePlayer?.pause()
+    }
+
+    override fun onDestroy() {
+        binding.detailPlayerView.player = null
+        inlinePlayer?.release()
+        inlinePlayer = null
+        super.onDestroy()
     }
 
     private fun showOfflineCachePicker() {
@@ -581,16 +677,17 @@ class DetailActivity : AppCompatActivity() {
             val state = viewModel.uiState.value as? DetailUiState.Success ?: return@launch
             val showEpisodes = currentEpisodes.isNotEmpty()
             if (showEpisodes) {
-                binding.cacheLabel.text = getString(R.string.add_cache)
+                binding.cacheButton.contentDescription = getString(R.string.add_cache)
                 return@launch
             }
             val target = resolveDownloadTarget(state)
             if (target == null) {
-                binding.cacheLabel.text = getString(R.string.add_cache)
+                binding.cacheButton.contentDescription = getString(R.string.add_cache)
                 return@launch
             }
             val existing = offlineDownloadService.findDownload(target.mediaId, target.episodeId)
-            binding.cacheLabel.text = when (existing?.status) {
+            // 二改：缓存按钮改为标题行图标（无文字标签），状态走 contentDescription
+            binding.cacheButton.contentDescription = when (existing?.status) {
                 OfflineDownloadStatus.COMPLETED -> getString(R.string.offline_cached)
                 OfflineDownloadStatus.DOWNLOADING,
                 OfflineDownloadStatus.PENDING -> getString(R.string.offline_downloading)
