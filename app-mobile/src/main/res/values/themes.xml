@@ -81,6 +81,9 @@
 
     <style name="Widget.Lomen.BottomNav.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
         <item name="android:color">@color/bottom_nav_indicator</item>
+        <!-- 二改：胶囊从 M3 默认 64x32dp 缩到 48x24dp，收紧图标-文字间距（约 8dp→4dp，对齐 EchoTV） -->
+        <item name="android:width">48dp</item>
+        <item name="android:height">24dp</item>
     </style>
 
     <style name="Widget.Lomen.PrivacySpinner" parent="Widget.AppCompat.Spinner">
