@@ -26,7 +26,7 @@ class VersionCheckService(
         .build()
 
     private val githubReleasesUrl =
-        "https://api.github.com/repos/jia070310/lemonTV-Film/releases?per_page=30"
+        "https://api.github.com/repos/xh9527x/lemonTV-Film/releases?per_page=30"
 
     suspend fun checkForUpdates(currentVersionCode: Int): VersionInfo? = withContext(Dispatchers.IO) {
         try {

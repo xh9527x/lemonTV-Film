@@ -204,7 +204,7 @@
     <string name="about_title">关于应用</string>
     <string name="about_app_name">柠檬影院</string>
     <string name="about_description">一款 MacCMS 影视客户端，支持首页分类、筛选搜索、智能跳过片头片尾、记忆续播等功能。手机端与 TV 端数据互通。</string>
-    <string name="about_github">GitHub: https://github.com/jia070310/lemonTV-Film</string>
+    <string name="about_github">GitHub: https://github.com/xh9527x/lemonTV-Film</string>
     <string name="about_copyright">© 2026 柠檬影院 版权所有</string>
     <string name="about_version_current">当前版本: v%1$s (稳定版)</string>
     <string name="about_version_title">版本更新</string>
