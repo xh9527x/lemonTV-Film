@@ -42,9 +42,8 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
+      # 注意：不要加 android-actions/setup-android——GitHub 的 ubuntu runner 自带完整 Android SDK
+      #（EchoTV 的 release.yml 也是这么做的，实测可用）；setup-android@v3 在公网 runner 上不稳定。
       - name: Install Android platform 34
         run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
