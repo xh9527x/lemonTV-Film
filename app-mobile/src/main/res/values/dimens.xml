@@ -4,7 +4,6 @@
     <dimen name="poster_radius">12dp</dimen>
     <dimen name="tag_radius">4dp</dimen>
     <dimen name="button_radius">24dp</dimen>
-    <dimen name="bottom_nav_height">52dp</dimen>
     <dimen name="header_padding_top">6dp</dimen>
     <dimen name="header_search_height">34dp</dimen>
     <dimen name="header_avatar_size">32dp</dimen>
