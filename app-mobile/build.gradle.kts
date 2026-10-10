@@ -20,18 +20,22 @@ android {
     }
 
     signingConfigs {
+        // 签名信息从环境变量读取（参照 EchoTV 做法），避免密码进仓库；
+        // 未配置时 release 回退用 debug 签名，保证 clone 下来直接能编。
         create("release") {
-            storeFile = rootProject.file("lomenTV.jks")
-            storePassword = "lomenTV123"
-            keyAlias = "lomenTV"
-            keyPassword = "lomenTV123"
+            val keystorePath = System.getenv("KEYSTORE_PATH")
+            if (!keystorePath.isNullOrEmpty()) {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
         }
     }
 
     buildTypes {
         debug {
-            // 与 release 使用同一签名，debug / 发行版可互相覆盖安装
-            signingConfig = signingConfigs.getByName("release")
+            // 默认 debug 签名，无需 keystore 即可构建调试包
         }
         release {
             isMinifyEnabled = false
@@ -39,7 +43,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            val keystorePath = System.getenv("KEYSTORE_PATH")
+            signingConfig = if (!keystorePath.isNullOrEmpty()) {
+                signingConfigs.getByName("release")
+            } else {
+                // 本地构建无 keystore 时用 debug 签名
+                signingConfigs.getByName("debug")
+            }
         }
     }
 
