@@ -10,7 +10,9 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.lemon.yingshi.mobile"
+        // applicationId 与 namespace 分离：源码包路径保持原样（避免 50+ 文件搬家），
+        // 系统认的"应用身份"只看 applicationId，改这里即可与原版共存。
+        applicationId = "com.video.lemonfilm"
         minSdk = 24
         targetSdk = 34
         versionCode = 10008

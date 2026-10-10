@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">柠檬影视</string>
+    <string name="app_name">柠檬影院</string>
     <string name="nav_home">首页</string>
     <string name="nav_recommend">推荐</string>
     <string name="nav_profile">我的</string>
@@ -76,7 +76,7 @@
     <string name="player_outro_start">当前为片尾开始</string>
     <string name="player_skip_intro_label">片头时长</string>
     <string name="player_skip_outro_label">片尾时长</string>
-    <string name="profile_user_name">柠檬影视用户</string>
+    <string name="profile_user_name">柠檬影院用户</string>
     <string name="user_profile_title">用户信息</string>
     <string name="user_profile_subtitle">本地账号 · 数据保存在本机</string>
     <string name="user_profile_section_info">账号信息</string>
@@ -202,10 +202,10 @@
     <string name="settings_cleared">已清除</string>
     <string name="settings_saved">已保存</string>
     <string name="about_title">关于应用</string>
-    <string name="about_app_name">柠檬影视</string>
+    <string name="about_app_name">柠檬影院</string>
     <string name="about_description">一款 MacCMS 影视客户端，支持首页分类、筛选搜索、智能跳过片头片尾、记忆续播等功能。手机端与 TV 端数据互通。</string>
     <string name="about_github">GitHub: https://github.com/jia070310/lemonTV-Film</string>
-    <string name="about_copyright">© 2026 柠檬影视 版权所有</string>
+    <string name="about_copyright">© 2026 柠檬影院 版权所有</string>
     <string name="about_version_current">当前版本: v%1$s (稳定版)</string>
     <string name="about_version_title">版本更新</string>
     <string name="about_stats_title">应用统计</string>
