@@ -4,12 +4,12 @@
 # 使用方式（Muse 的 GitHub App 没有 workflows 写权限，需在网页上手动添加一次）：
 # 1. 在 fork 仓库页面：Add file → Create new file，路径填 .github/workflows/release.yml，
 #    把本文件内容粘贴进去，Commit。
-# 2. Settings → Secrets and variables → Actions → New repository secret：
-#    Name: LOMENTV_JKS_B64
-#    Value: 本地执行 base64 -w0 lomenTV.jks 的输出
-#    （lomenTV.jks 用 keytool 生成：alias=lomenTV，storepass/keypass=lomenTV123，
-#     须与 app-mobile/build.gradle.kts 里的 signingConfigs.release 一致；
-#     密码已在仓库明文写死，无新增泄漏。注意 .gitignore 会忽略 *.jks，不会误提交。）
+# 2. Settings → Secrets and variables → Actions → New repository secret，共 4 个：
+#    LOMENTV_JKS_B64   = 本地执行 base64 -w0 lemonfilm.jks 的输出
+#    KEYSTORE_PASSWORD = keystore 密码
+#    KEY_ALIAS         = keystore 别名
+#    KEY_PASSWORD      = key 密码
+#    （密码/别名由你自己定，不要写进 workflow 明文。）
 # 3. 打 tag 并推送，例如：git tag mobile-v1.0.9 && git push origin mobile-v1.0.9
 #    （或在网页 Releases → Draft a new release 建 tag；tag 命名沿用作者的 mobile-v* 前缀）
 # 4. Actions 跑完后，手机版 release APK 会自动挂到该 tag 的 Release 下。
@@ -51,14 +51,17 @@ jobs:
       - name: Restore keystore
         env:
           KEYSTORE_B64: ${{ secrets.LOMENTV_JKS_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "$KEYSTORE_B64" | base64 -d > "$GITHUB_WORKSPACE/lomenTV.jks"
+          echo "$KEYSTORE_B64" | base64 -d > "$GITHUB_WORKSPACE/lemonfilm.jks"
           # 签名信息走环境变量（与 app-mobile/build.gradle.kts 的 EchoTV 式签名配置对应）；
-          # 密码沿用原作者写死的值，如换 keystore 需同步改这里。
-          echo "KEYSTORE_PATH=$GITHUB_WORKSPACE/lomenTV.jks" >> $GITHUB_ENV
-          echo "KEYSTORE_PASSWORD=lomenTV123" >> $GITHUB_ENV
-          echo "KEY_ALIAS=lomenTV" >> $GITHUB_ENV
-          echo "KEY_PASSWORD=lomenTV123" >> $GITHUB_ENV
+          # 密码/别名全部来自 secrets，workflow 里不出现明文。
+          echo "KEYSTORE_PATH=$GITHUB_WORKSPACE/lemonfilm.jks" >> $GITHUB_ENV
+          echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> $GITHUB_ENV
+          echo "KEY_ALIAS=$KEY_ALIAS" >> $GITHUB_ENV
+          echo "KEY_PASSWORD=$KEY_PASSWORD" >> $GITHUB_ENV
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
