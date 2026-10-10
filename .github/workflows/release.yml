@@ -44,8 +44,9 @@ jobs:
 
       # 注意：不要加 android-actions/setup-android——GitHub 的 ubuntu runner 自带完整 Android SDK
       #（EchoTV 的 release.yml 也是这么做的，实测可用）；setup-android@v3 在公网 runner 上不稳定。
+      # sdkmanager 不在 PATH 里，用 $ANDROID_SDK_ROOT（runner 预置）写全路径。
       - name: Install Android platform 34
-        run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
+        run: $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
       - name: Restore keystore
         env:
