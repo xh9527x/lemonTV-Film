@@ -51,7 +51,14 @@ jobs:
       - name: Restore keystore
         env:
           KEYSTORE_B64: ${{ secrets.LOMENTV_JKS_B64 }}
-        run: echo "$KEYSTORE_B64" | base64 -d > lomenTV.jks
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$GITHUB_WORKSPACE/lomenTV.jks"
+          # 签名信息走环境变量（与 app-mobile/build.gradle.kts 的 EchoTV 式签名配置对应）；
+          # 密码沿用原作者写死的值，如换 keystore 需同步改这里。
+          echo "KEYSTORE_PATH=$GITHUB_WORKSPACE/lomenTV.jks" >> $GITHUB_ENV
+          echo "KEYSTORE_PASSWORD=lomenTV123" >> $GITHUB_ENV
+          echo "KEY_ALIAS=lomenTV" >> $GITHUB_ENV
+          echo "KEY_PASSWORD=lomenTV123" >> $GITHUB_ENV
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
