@@ -1,0 +1,67 @@
+# lemonTV-Film 手机版云端构建（tag 触发）
+# 参照 xh9527x/EchoTV 的 release.yml 规范：permissions + softprops 发布到 Release。
+#
+# 使用方式（Muse 的 GitHub App 没有 workflows 写权限，需在网页上手动添加一次）：
+# 1. 在 fork 仓库页面：Add file → Create new file，路径填 .github/workflows/release.yml，
+#    把本文件内容粘贴进去，Commit。
+# 2. Settings → Secrets and variables → Actions → New repository secret：
+#    Name: LOMENTV_JKS_B64
+#    Value: 本地执行 base64 -w0 lomenTV.jks 的输出
+#    （lomenTV.jks 用 keytool 生成：alias=lomenTV，storepass/keypass=lomenTV123，
+#     须与 app-mobile/build.gradle.kts 里的 signingConfigs.release 一致；
+#     密码已在仓库明文写死，无新增泄漏。注意 .gitignore 会忽略 *.jks，不会误提交。）
+# 3. 打 tag 并推送，例如：git tag mobile-v1.0.9 && git push origin mobile-v1.0.9
+#    （或在网页 Releases → Draft a new release 建 tag；tag 命名沿用作者的 mobile-v* 前缀）
+# 4. Actions 跑完后，手机版 release APK 会自动挂到该 tag 的 Release 下。
+#
+# 说明：原作者仓库无 CI（23 个 release 均为本地手打），此文件为二改新增。
+# 本版只构建手机端（app-mobile）。如需 TV 端，加一个 :app:assembleRelease 步骤即可。
+# 基线验证建议：先打一个测试 tag（如 mobile-v1.0.9-test）看流水线是否跑通。
+
+name: Build Mobile APK
+
+on:
+  push:
+    tags:
+      - 'mobile-v*'
+
+permissions:
+  contents: write  # 允许创建 release 和上传文件
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android platform 34
+        run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Restore keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.LOMENTV_JKS_B64 }}
+        run: echo "$KEYSTORE_B64" | base64 -d > lomenTV.jks
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build mobile release APK
+        run: ./gradlew :app-mobile:assembleRelease --no-daemon
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app-mobile/build/outputs/apk/release/*.apk
+          generate_release_notes: true
+          fail_on_unmatched_files: true
