@@ -39,6 +39,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp" />
 
+            <!-- 卡1：本应用信息 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -65,12 +66,49 @@
                     android:textSize="13sp" />
 
                 <TextView
-                    android:id="@+id/github_text"
+                    android:id="@+id/fork_github_text"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:autoLink="web"
-                    android:text="@string/about_github"
+                    android:text="@string/about_fork_github"
+                    android:textColor="@color/primary_yellow"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- 卡2：开源致谢（方案B） -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_settings_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/about_thanks_title"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:lineSpacingExtra="4dp"
+                    android:text="@string/about_thanks_text"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/original_github_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:autoLink="web"
+                    android:text="@string/about_original_github"
                     android:textColor="@color/primary_yellow"
                     android:textSize="12sp" />
 
