@@ -117,6 +117,16 @@ class DetailActivity : AppCompatActivity() {
                     visibility == android.view.View.VISIBLE && inlinePlayer != null
             }
         )
+        // 二改：隐藏 ExoPlayer 内置进度条与时间（外部已有自定义常驻进度条，避免重复）
+        binding.detailPlayerView.findViewById<android.view.View>(
+            androidx.media3.ui.R.id.exo_progress
+        )?.isVisible = false
+        binding.detailPlayerView.findViewById<android.view.View>(
+            androidx.media3.ui.R.id.exo_position
+        )?.isVisible = false
+        binding.detailPlayerView.findViewById<android.view.View>(
+            androidx.media3.ui.R.id.exo_duration
+        )?.isVisible = false
         // 二改：常驻进度条支持拖动 seek
         binding.playerSeekbar.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
