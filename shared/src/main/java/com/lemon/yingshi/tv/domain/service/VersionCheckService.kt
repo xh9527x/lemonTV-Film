@@ -37,6 +37,9 @@ class VersionCheckService(
             val responseBody = response.body?.string() ?: return@withContext null
             val releases = JSONArray(responseBody)
 
+            // 二改：收集所有有效版本，取最大的（不依赖 API 排序，避免失败构建的 tag 干扰）
+            var best: VersionInfo? = null
+            var bestCode = currentVersionCode
             for (index in 0 until releases.length()) {
                 val release = releases.getJSONObject(index)
                 if (release.optBoolean("draft", false)) continue
@@ -54,9 +57,10 @@ class VersionCheckService(
                     "Platform=$platform tag=$tagName remote=$versionCode current=$currentVersionCode"
                 )
 
-                if (versionCode > currentVersionCode) {
+                if (versionCode > bestCode) {
                     val originalDownloadUrl = asset.getString("browser_download_url")
-                    return@withContext VersionInfo(
+                    bestCode = versionCode
+                    best = VersionInfo(
                         versionName = versionName,
                         versionCode = versionCode,
                         downloadUrl = "https://gh-proxy.org/$originalDownloadUrl",
@@ -64,8 +68,8 @@ class VersionCheckService(
                         releaseDate = release.optString("published_at")
                     )
                 }
-                return@withContext null
             }
+            return@withContext best
         } catch (e: Exception) {
             Log.e(TAG, "Error checking for updates: ${e.message}", e)
         }
