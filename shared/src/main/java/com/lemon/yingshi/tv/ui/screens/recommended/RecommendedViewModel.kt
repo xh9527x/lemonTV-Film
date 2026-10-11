@@ -145,7 +145,26 @@ class RecommendedViewModel @Inject constructor(
                 }
 
                 _uiState.value = if (firstPage.items.isEmpty()) {
-                    RecommendedUiState.Empty()
+                    // 二改兜底：推荐为空（无推荐分类或数据为空）→ 降级加载最新内容
+                    val fallback = withContext(Dispatchers.IO) {
+                        withTimeoutOrNull(MOBILE_FETCH_TIMEOUT_MS) {
+                            macCmsRepository.fetchLatestVods(
+                                page = 1,
+                                pageSize = MOBILE_PAGE_SIZE
+                            )
+                        }
+                    }
+                    if (fallback != null && fallback.items.isNotEmpty()) {
+                        RecommendedUiState.Success(
+                            items = fallback.items,
+                            total = fallback.total,
+                            page = fallback.page,
+                            pageCount = fallback.pageCount,
+                            isFallbackToLatest = true
+                        )
+                    } else {
+                        RecommendedUiState.Empty()
+                    }
                 } else {
                     RecommendedUiState.Success(
                         items = firstPage.items,
@@ -177,13 +196,21 @@ class RecommendedViewModel @Inject constructor(
                 val nextPage = state.page + 1
                 val result = withContext(Dispatchers.IO) {
                     withTimeoutOrNull(MOBILE_FETCH_TIMEOUT_MS) {
-                        macCmsRepository.fetchRecommendedVods(
-                            level = RECOMMENDED_LEVEL,
-                            page = nextPage,
-                            pageSize = MOBILE_PAGE_SIZE,
-                            fullScan = false,
-                            quickPreview = true
-                        )
+                        // 二改：兜底模式下加载更多走「最新」，否则走「推荐」
+                        if (state.isFallbackToLatest) {
+                            macCmsRepository.fetchLatestVods(
+                                page = nextPage,
+                                pageSize = MOBILE_PAGE_SIZE
+                            )
+                        } else {
+                            macCmsRepository.fetchRecommendedVods(
+                                level = RECOMMENDED_LEVEL,
+                                page = nextPage,
+                                pageSize = MOBILE_PAGE_SIZE,
+                                fullScan = false,
+                                quickPreview = true
+                            )
+                        }
                     }
                 } ?: return@launch
                 if (result.items.isEmpty()) return@launch
@@ -252,7 +279,9 @@ sealed class RecommendedUiState {
         val items: List<MacCmsVodItem>,
         val total: Int,
         val page: Int,
-        val pageCount: Int
+        val pageCount: Int,
+        /** 二改：true 表示当前展示的是「最新」兜底数据（服务器无推荐内容时） */
+        val isFallbackToLatest: Boolean = false
     ) : RecommendedUiState()
     data class Empty(val message: String = NO_RECOMMEND_MESSAGE) : RecommendedUiState()
 

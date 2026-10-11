@@ -123,10 +123,18 @@ class RecommendationFragment : Fragment() {
                             binding.emptyText.isVisible = false
                             binding.errorText.isVisible = false
                             binding.recommendCount.isVisible = true
-                            binding.recommendCount.text = getString(
-                                R.string.recommend_total_count,
-                                state.total
-                            )
+                            // 二改：兜底模式下提示用户当前展示的是最新内容
+                            binding.recommendCount.text = if (state.isFallbackToLatest) {
+                                getString(
+                                    R.string.recommend_fallback_to_latest,
+                                    state.total
+                                )
+                            } else {
+                                getString(
+                                    R.string.recommend_total_count,
+                                    state.total
+                                )
+                            }
                             adapter.submitList(state.items)
                         }
                     }

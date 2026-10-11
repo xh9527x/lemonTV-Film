@@ -394,6 +394,35 @@ class MacCmsRepository @Inject constructor(
         )
     }
 
+    /**
+     * 二改：推荐页兜底——拉取最新视频。
+     * 当服务器无「推荐」分类或推荐数据为空时，推荐页自动降级显示最新内容。
+     */
+    suspend fun fetchLatestVods(
+        page: Int = 1,
+        pageSize: Int = 30
+    ): MacCmsCategoryFetchResult {
+        val response = fetchVodList(
+            MacCmsFilterParams(
+                sort = MacCmsSortOption.LATEST,
+                page = page.coerceAtLeast(1),
+                pageSize = pageSize
+            )
+        )
+        if (response.code != 1) {
+            return MacCmsCategoryFetchResult(emptyList(), 0, error = response.msg)
+        }
+        val items = prepareListForDisplay(getServerUrl(), response.list)
+        val total = response.total
+        val pageCount = if (total <= 0) 1 else ((total + pageSize - 1) / pageSize)
+        return MacCmsCategoryFetchResult(
+            items = items,
+            total = total,
+            page = page.coerceAtLeast(1),
+            pageCount = pageCount
+        )
+    }
+
     @Volatile
     private var cachedRecommendedItems: List<MacCmsVodItem>? = null
 
