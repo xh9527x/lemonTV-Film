@@ -78,6 +78,8 @@ class RecommendationFragment : Fragment() {
         // 二改：初始化列数（从偏好读取）
         val prefs = requireContext().getSharedPreferences("display_prefs", 0)
         val initColumns = prefs.getInt("grid_columns", 3)
+        // 二改：初始化按钮文字（避免显示 XML 默认的"3列"）
+        binding.columnToggleButton.text = "${initColumns}列"
 
         adapter = VodGridAdapter { vod ->
             VodUiBinder.openDetail(requireContext(), vod, viewModel::cacheVodForDetail)
