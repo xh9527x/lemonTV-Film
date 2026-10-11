@@ -18,7 +18,7 @@ import com.lemon.yingshi.mobile.ui.UpdateInstallCoordinator
 import com.lemon.yingshi.mobile.ui.settings.SettingsDialogs
 import com.lemon.yingshi.mobile.util.setBackNavigation
 import kotlinx.coroutines.launch
-import com.lemon.yingshi.mobile.util.CrashLogHelper
+import com.lemon.yingshi.mobile.util.DebugLog
 
 @dagger.hilt.android.AndroidEntryPoint
 class AboutActivity : AppCompatActivity() {
@@ -67,6 +67,14 @@ class AboutActivity : AppCompatActivity() {
             true
         }
         binding.cardStats.root.setOnClickListener { onStatsCardClick() }
+        // 二改：调试日志卡
+        setupCard(
+            binding.cardDebugLog,
+            R.drawable.ic_about_stats,
+            "调试日志",
+            "导出运行日志，协助定位问题"
+        )
+        binding.cardDebugLog.root.setOnClickListener { onDebugLogCardClick() }
     }
 
     private fun setupActionCard(
@@ -185,11 +193,24 @@ class AboutActivity : AppCompatActivity() {
         }
     }
 
-    /** 二改：导出崩溃日志 */
-    private fun exportCrashLog() {
-        val logFile = CrashLogHelper.latestLogFile(this)
+    /** 二改：调试日志卡点击，弹出选项 */
+    private fun onDebugLogCardClick() {
+        val options = arrayOf("导出运行日志", "导出崩溃日志")
+        android.app.AlertDialog.Builder(this)
+            .setTitle("调试日志")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> exportLogFile(DebugLog.getDebugLogFile(), "运行日志")
+                    1 -> exportLogFile(DebugLog.getLatestCrashFile(), "崩溃日志")
+                }
+            }
+            .show()
+    }
+
+    /** 二改：导出日志文件 */
+    private fun exportLogFile(logFile: java.io.File?, label: String) {
         if (logFile == null || !logFile.exists()) {
-            android.widget.Toast.makeText(this, "暂无崩溃日志", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(this, "暂无${label}", android.widget.Toast.LENGTH_SHORT).show()
             return
         }
         try {
@@ -203,10 +224,15 @@ class AboutActivity : AppCompatActivity() {
                 putExtra(android.content.Intent.EXTRA_STREAM, uri)
                 addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            startActivity(android.content.Intent.createChooser(intent, "分享崩溃日志"))
+            startActivity(android.content.Intent.createChooser(intent, "分享${label}"))
         } catch (e: Exception) {
             android.widget.Toast.makeText(this, "导出失败: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
         }
+    }
+
+    /** 二改：导出崩溃日志（保留长按入口兼容） */
+    private fun exportCrashLog() {
+        exportLogFile(DebugLog.getLatestCrashFile(), "崩溃日志")
     }
 
 

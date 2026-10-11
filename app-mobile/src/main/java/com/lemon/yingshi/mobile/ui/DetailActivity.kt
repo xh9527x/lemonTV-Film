@@ -57,6 +57,8 @@ class DetailActivity : AppCompatActivity() {
     private var plotExpanded = false
     private var actorsExpanded = false
     private var selectedEpisodeId: String? = null
+    // 二改：是否已自动播放（避免重复触发）
+    private var hasAutoPlayed = false
     private var episodeCurrentPage = 0
     private var lastEpisodeMediaId: String? = null
     private var lastPlaySourceIndex: Int? = null
@@ -272,6 +274,12 @@ class DetailActivity : AppCompatActivity() {
             currentEpisodes = emptyList()
         }
         refreshCacheButtonState()
+        // 二改：详情加载完成自动播放（仅首次）
+        if (!hasAutoPlayed) {
+            hasAutoPlayed = true
+            playResume()
+        }
+
     }
 
     private fun renderPlaySources(state: DetailUiState.Success) {
