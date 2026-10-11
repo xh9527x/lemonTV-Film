@@ -167,8 +167,8 @@ class MainActivity : AppCompatActivity() {
 
     /** 二改：更新自定义底栏选中态（图标着色） */
     private fun updateBottomNavSelected(selectedId: Int) {
-        val activeColor = getColor(R.color.bottom_nav_active)
-        val inactiveColor = getColor(R.color.bottom_nav_inactive)
+        val activeColor = androidx.core.content.ContextCompat.getColor(this, R.color.bottom_nav_active)
+        val inactiveColor = androidx.core.content.ContextCompat.getColor(this, R.color.bottom_nav_inactive)
         binding.navHomeBtn.imageTintList = android.content.res.ColorStateList.valueOf(
             if (selectedId == R.id.homeFragment) activeColor else inactiveColor
         )
