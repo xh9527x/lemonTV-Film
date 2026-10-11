@@ -68,7 +68,7 @@ class AboutActivity : AppCompatActivity() {
         }
         binding.cardStats.root.setOnClickListener { onStatsCardClick() }
         // 二改：调试日志卡
-        setupCard(
+        setupActionCard(
             binding.cardDebugLog,
             R.drawable.ic_about_stats,
             "调试日志",
