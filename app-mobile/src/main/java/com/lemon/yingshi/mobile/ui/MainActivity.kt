@@ -16,7 +16,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.setupWithNavController
 import com.lemon.yingshi.mobile.R
 import com.lemon.yingshi.mobile.databinding.ActivityMainBinding
 import com.lemon.yingshi.tv.ui.screens.home.MacCmsHomeUiState
@@ -56,13 +55,15 @@ class MainActivity : AppCompatActivity() {
         val navHost = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHost.navController
-        binding.bottomNav.setupWithNavController(navController)
+        // 二改：自定义底栏点击（替代 BottomNavigationView.setupWithNavController）
+        binding.navHomeBtn.setOnClickListener { navigateToTopLevel(R.id.homeFragment) }
+        binding.navRecommendBtn.setOnClickListener { navigateToTopLevel(R.id.recommendationFragment) }
+        binding.navProfileBtn.setOnClickListener { navigateToTopLevel(R.id.profileFragment) }
         syncBottomNavWithDestination()
 
-        binding.bottomNav.setOnItemReselectedListener { item ->
-            if (item.itemId == R.id.homeFragment) {
-                scrollHomeToTop()
-            }
+        binding.navHomeBtn.setOnLongClickListener {
+            scrollHomeToTop()
+            true
         }
 
         window.decorView.post {
@@ -137,25 +138,46 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 versionUpdateViewModel.hasUpdate.collect { hasUpdate ->
-                    val badge = binding.bottomNav.getOrCreateBadge(R.id.profileFragment)
-                    badge.isVisible = hasUpdate
-                    if (hasUpdate) {
-                        badge.backgroundColor = ContextCompat.getColor(this@MainActivity, R.color.error_red)
-                        badge.clearNumber()
-                    }
+                    // 二改：自定义底栏暂不支持 Badge，更新提示走关于页
                 }
             }
+        }
+    }
+
+    /** 二改：自定义底栏导航到顶级目的地 */
+    private fun navigateToTopLevel(destinationId: Int) {
+        val current = navController.currentDestination?.id
+        if (current == destinationId) {
+            if (destinationId == R.id.homeFragment) scrollHomeToTop()
+            return
+        }
+        navController.navigate(destinationId) {
+            popUpTo(navController.graph.startDestinationId) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
         }
     }
 
     private fun syncBottomNavWithDestination() {
         navController.addOnDestinationChangedListener { _, destination, _ ->
             if (destination.id !in topLevelDestinations) return@addOnDestinationChangedListener
-            val menuItem = binding.bottomNav.menu.findItem(destination.id) ?: return@addOnDestinationChangedListener
-            if (!menuItem.isChecked) {
-                menuItem.isChecked = true
-            }
+            updateBottomNavSelected(destination.id)
         }
+    }
+
+    /** 二改：更新自定义底栏选中态（图标着色） */
+    private fun updateBottomNavSelected(selectedId: Int) {
+        val activeColor = getColor(R.color.bottom_nav_active)
+        val inactiveColor = getColor(R.color.bottom_nav_inactive)
+        binding.navHomeBtn.imageTintList = android.content.res.ColorStateList.valueOf(
+            if (selectedId == R.id.homeFragment) activeColor else inactiveColor
+        )
+        binding.navRecommendBtn.imageTintList = android.content.res.ColorStateList.valueOf(
+            if (selectedId == R.id.recommendationFragment) activeColor else inactiveColor
+        )
+        binding.navProfileBtn.imageTintList = android.content.res.ColorStateList.valueOf(
+            if (selectedId == R.id.profileFragment) activeColor else inactiveColor
+        )
     }
 
     private fun scrollHomeToTop() {
@@ -170,9 +192,7 @@ class MainActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             binding.navHostFragment.updatePadding(top = systemBars.top)
-            // 二改：手势条安全区改用 bottomMargin（而非内部 padding），
-            // 避免 BottomNavigationView 被撑高后图标置顶、文字沉底，中间出现大间隙。
-            binding.bottomNav.updatePadding(bottom = 0)
+            // 二改：手势条安全区用 bottomMargin，避免自定义底栏被撑高。
             binding.bottomNav.updateLayoutParams<androidx.constraintlayout.widget.ConstraintLayout.LayoutParams> {
                 bottomMargin = systemBars.bottom
             }

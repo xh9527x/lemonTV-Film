@@ -17,26 +17,51 @@
         app:layout_constraintTop_toTopOf="parent"
         app:navGraph="@navigation/nav_graph" />
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView
+    <!-- 二改：自定义底栏（替代 BottomNavigationView，避免 Material 内部测量问题） -->
+    <LinearLayout
         android:id="@+id/bottom_nav"
         android:layout_width="0dp"
         android:layout_height="48dp"
         android:background="@color/tab_bar_bg"
-        app:itemIconSize="22dp"
-        app:itemPaddingTop="0dp"
-        app:itemPaddingBottom="0dp"
-        app:activeIndicatorLabelPadding="0dp"
-        app:itemTextAppearanceActive="@style/Text.BottomNav"
-        app:itemTextAppearanceInactive="@style/Text.BottomNav"
-        app:itemIconTint="@color/bottom_nav_color"
-        app:itemTextColor="@color/bottom_nav_color"
-        app:itemActiveIndicatorStyle="@style/Widget.Lomen.BottomNav.ActiveIndicator"
-        app:itemRippleColor="@color/ripple_highlight"
-        app:labelVisibilityMode="unlabeled"
+        android:gravity="center"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:menu="@menu/bottom_nav_menu" />
+        app:layout_constraintStart_toStartOf="parent">
+
+        <ImageButton
+            android:id="@+id/nav_home_btn"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/nav_home"
+            android:src="@drawable/ic_nav_home"
+            android:scaleType="center"
+            app:tint="@color/bottom_nav_inactive" />
+
+        <ImageButton
+            android:id="@+id/nav_recommend_btn"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/nav_recommend"
+            android:src="@drawable/ic_nav_recommend"
+            android:scaleType="center"
+            app:tint="@color/bottom_nav_inactive" />
+
+        <ImageButton
+            android:id="@+id/nav_profile_btn"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/nav_profile"
+            android:src="@drawable/ic_nav_profile"
+            android:scaleType="center"
+            app:tint="@color/bottom_nav_inactive" />
+    </LinearLayout>
 
     <FrameLayout
         android:id="@+id/splash_overlay"
