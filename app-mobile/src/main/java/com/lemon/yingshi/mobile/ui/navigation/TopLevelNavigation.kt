@@ -4,8 +4,6 @@ import androidx.annotation.IdRes
 import androidx.fragment.app.Fragment
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
-import androidx.navigation.ui.NavigationUI
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.lemon.yingshi.mobile.R
 
 object TopLevelNavigation {
@@ -19,13 +17,8 @@ object TopLevelNavigation {
     fun navigate(fragment: Fragment, @IdRes destinationId: Int) {
         if (destinationId !in topLevelDestinations) return
 
+        // 二改：底栏已重构为 LinearLayout，不再用 BottomNavigationView，直接导航
         val navController = fragment.findNavController()
-        val bottomNav = fragment.requireActivity().findViewById<BottomNavigationView>(R.id.bottom_nav)
-        val menuItem = bottomNav?.menu?.findItem(destinationId)
-        if (menuItem != null && NavigationUI.onNavDestinationSelected(menuItem, navController)) {
-            return
-        }
-
         val options = NavOptions.Builder()
             .setLaunchSingleTop(true)
             .setRestoreState(true)
