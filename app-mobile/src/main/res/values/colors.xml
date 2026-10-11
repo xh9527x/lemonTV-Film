@@ -6,6 +6,8 @@
     <color name="surface_elevated">#FF2A2A2A</color>
     <color name="settings_dialog_item_bg">#FF242424</color>
     <color name="primary_yellow">#FFFDDD0E</color>
+    <!-- 二改：启动页背景（浅色绿 / 深色灰） -->
+    <color name="splash_background">#FF43A047</color>
     <color name="text_primary">#FFFFFFFF</color>
     <color name="text_secondary">#FF888888</color>
     <color name="text_muted">#FF666666</color>
