@@ -36,7 +36,10 @@ import com.lemon.yingshi.tv.utils.EpisodeLabelFormatter
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlin.math.max
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -62,6 +65,9 @@ class DetailActivity : AppCompatActivity() {
     /** 内嵌播放器（顶部固定） */
     private var inlinePlayer: ExoPlayer? = null
     private var inlineTarget: InlinePlaybackTarget? = null
+    // 二改：常驻进度条相关
+    private var progressUpdateJob: Job? = null
+    private var isUserSeeking = false
 
     /** 内嵌播放所需的播放信息（两种 PlaybackInfo 字段相同，统一收敛） */
     private data class InlinePlaybackTarget(
@@ -104,6 +110,37 @@ class DetailActivity : AppCompatActivity() {
         binding.coverPlayButton.setOnClickListener { playResume() }
         binding.playerCover.setOnClickListener { playResume() }
         binding.playerFullscreenButton.setOnClickListener { enterFullscreen() }
+        // 二改：全屏键跟随播放器控制器显隐（返回键保持常驻）
+        binding.detailPlayerView.setControllerVisibilityListener(
+            androidx.media3.ui.PlayerView.ControllerVisibilityListener { visibility ->
+                binding.playerFullscreenButton.isVisible =
+                    visibility == android.view.View.VISIBLE && inlinePlayer != null
+            }
+        )
+        // 二改：常驻进度条支持拖动 seek
+        binding.playerSeekbar.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
+                if (!fromUser) return
+                val player = inlinePlayer ?: return
+                val duration = player.duration
+                if (duration > 0) {
+                    val target = (progress / 1000f * duration).toLong()
+                    binding.playerTimeText.text =
+                        "${formatPlayerTime(target)} / ${formatPlayerTime(duration)}"
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) {
+                isUserSeeking = true
+            }
+            override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {
+                val player = inlinePlayer
+                val progress = seekBar?.progress ?: 0
+                isUserSeeking = false
+                if (player != null && player.duration > 0) {
+                    player.seekTo((progress / 1000f * player.duration).toLong())
+                }
+            }
+        })
         onBackPressedDispatcher.addCallback(this) { onDetailBack() }
         binding.plotToggle.setOnClickListener { togglePlot() }
         binding.actorsToggle.setOnClickListener { toggleActors() }
@@ -459,6 +496,9 @@ class DetailActivity : AppCompatActivity() {
         binding.playerCover.isVisible = false
         binding.detailPlayerView.isVisible = true
         binding.playerFullscreenButton.isVisible = true
+        // 二改：显示常驻进度条，启动进度刷新
+        binding.playerProgressContainer.isVisible = true
+        startProgressUpdater()
         // 重建播放器（切集时直接换 media）
         binding.detailPlayerView.player = null
         inlinePlayer?.release()
@@ -486,13 +526,50 @@ class DetailActivity : AppCompatActivity() {
     private fun stopInlinePlayback() {
         // 二改：停止前保存最终观看进度
         statsRecorder.stop()
+        // 二改：停止进度刷新，隐藏常驻进度条
+        progressUpdateJob?.cancel()
+        progressUpdateJob = null
         binding.detailPlayerView.player = null
         inlinePlayer?.release()
         inlinePlayer = null
         inlineTarget = null
         binding.detailPlayerView.isVisible = false
         binding.playerFullscreenButton.isVisible = false
+        binding.playerProgressContainer.isVisible = false
         binding.playerCover.isVisible = true
+    }
+
+    // 二改：常驻进度条刷新（用户拖动时不打架）
+    private fun startProgressUpdater() {
+        progressUpdateJob?.cancel()
+        progressUpdateJob = lifecycleScope.launch {
+            while (isActive) {
+                val player = inlinePlayer
+                if (player != null && !isUserSeeking) {
+                    val duration = player.duration.coerceAtLeast(0)
+                    val position = player.currentPosition.coerceAtLeast(0)
+                    if (duration > 0) {
+                        binding.playerSeekbar.progress =
+                            ((position * 1000) / duration).toInt().coerceIn(0, 1000)
+                        binding.playerTimeText.text =
+                            "${formatPlayerTime(position)} / ${formatPlayerTime(duration)}"
+                    }
+                }
+                delay(500)
+            }
+        }
+    }
+
+    private fun formatPlayerTime(ms: Long): String {
+        val totalSeconds = (ms / 1000).coerceAtLeast(0)
+        val hours = totalSeconds / 3600
+        val minutes = (totalSeconds % 3600) / 60
+        val seconds = totalSeconds % 60
+        return if (hours > 0) {
+            String.format("%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            String.format("%02d:%02d", minutes, seconds)
+        }
     }
 
     private fun enterFullscreen() {
