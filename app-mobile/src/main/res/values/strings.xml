@@ -221,6 +221,7 @@
     <string name="about_version_title">版本更新</string>
     <string name="about_stats_title">应用统计</string>
     <string name="about_version_stable">当前版本: v%1$s (稳定版)</string>
+    <string name="about_based_on">基于上游 v1.0.8 修改</string>
     <string name="about_version_with_update">当前版本: v%1$s | 最新: v%2$s</string>
     <string name="about_version_checking">正在检查更新…</string>
     <string name="about_update_banner">新版本: v%1$s</string>
