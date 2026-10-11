@@ -15,8 +15,8 @@ android {
         applicationId = "com.video.lemonfilm"
         minSdk = 24
         targetSdk = 34
-        versionCode = 10016
-        versionName = "1.0.16"
+        versionCode = 10017
+        versionName = "1.0.17"
 
         vectorDrawables.useSupportLibrary = true
     }
