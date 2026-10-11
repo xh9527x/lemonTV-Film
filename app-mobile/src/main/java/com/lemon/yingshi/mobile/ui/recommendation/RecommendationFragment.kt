@@ -47,9 +47,17 @@ class RecommendationFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         // 二改：推荐页顶部高级筛选入口（同首页“更多”的筛选页）
-        // 不传 libraryTitle/typeId，让 FilterActivity 先显示筛选条件页
+        // 取首个顶部分类传 typeId，保证和首页一致有数据；取不到则走通用筛选
         binding.filterButton.setOnClickListener {
-            startActivity(FilterActivity.intent(context = requireContext()))
+            viewLifecycleOwner.lifecycleScope.launch {
+                val typeId = viewModel.getFirstNavTypeId() ?: -1
+                startActivity(
+                    FilterActivity.intent(
+                        context = requireContext(),
+                        typeId = typeId
+                    )
+                )
+            }
         }
 
         adapter = VodGridAdapter { vod ->

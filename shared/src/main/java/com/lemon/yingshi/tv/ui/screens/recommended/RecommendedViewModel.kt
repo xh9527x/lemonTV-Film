@@ -30,6 +30,16 @@ class RecommendedViewModel @Inject constructor(
     private val _isLoadingMore = MutableStateFlow(false)
     val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
 
+    /** 二改：推荐页高级筛选入口用——取第一个顶部分类（同首页“更多”逻辑） */
+    suspend fun getFirstNavTypeId(): Int? {
+        return try {
+            val taxonomy = macCmsRepository.fetchTaxonomy(forceRefresh = false)
+            taxonomy.topCategories.firstOrNull()?.typeId
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     /** TV 推荐页：分页浏览（可深扫） */
     fun loadPage(page: Int) {
         viewModelScope.launch {
