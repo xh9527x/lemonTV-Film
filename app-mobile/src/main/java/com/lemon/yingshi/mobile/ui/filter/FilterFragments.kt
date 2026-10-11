@@ -10,6 +10,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.lemon.yingshi.mobile.ui.home.GridSpacingItemDecoration
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -180,9 +183,25 @@ class FilterResultsFragment : Fragment() {
         adapter = VodGridAdapter { vod ->
             VodUiBinder.openDetail(requireContext(), vod, viewModel::cacheVodForDetail)
         }
+        // 二改：列数切换（1/2/3列），与推荐页共用偏好
+        val prefs = requireContext().getSharedPreferences("display_prefs", 0)
+        val initColumns = prefs.getInt("grid_columns", 3)
+        adapter.listMode = (initColumns == 1)
+        binding.columnToggleButton.text = "${initColumns}列"
+        binding.columnToggleButton.setOnClickListener {
+            val current = prefs.getInt("grid_columns", 3)
+            val next = when (current) {
+                3 -> 2
+                2 -> 1
+                else -> 3
+            }
+            prefs.edit().putInt("grid_columns", next).apply()
+            applyColumnCount(next)
+        }
+
         val spacing = resources.getDimensionPixelSize(R.dimen.card_spacing)
         binding.resultsRecycler.apply {
-            PosterGridLayout.setup(this, spacing)
+            setupColumnLayout(this, spacing, initColumns)
             adapter = this@FilterResultsFragment.adapter
             itemAnimator = null
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -220,4 +239,42 @@ class FilterResultsFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
+
+    /** 二改：应用列数设置 */
+    private fun applyColumnCount(columns: Int) {
+        binding.columnToggleButton.text = "${columns}列"
+        val spacing = resources.getDimensionPixelSize(R.dimen.card_spacing)
+        val currentData = adapter.getCurrentData()
+        // 重建 Adapter 避免 ViewHolder 混乱
+        val newAdapter = VodGridAdapter { vod ->
+            VodUiBinder.openDetail(requireContext(), vod, viewModel::cacheVodForDetail)
+        }
+        newAdapter.listMode = (columns == 1)
+        if (currentData.isNotEmpty()) {
+            newAdapter.submitList(currentData)
+        }
+        adapter = newAdapter
+        setupColumnLayout(binding.resultsRecycler, spacing, columns)
+        binding.resultsRecycler.adapter = adapter
+    }
+
+    /** 二改：配置 LayoutManager */
+    private fun setupColumnLayout(recyclerView: RecyclerView, spacing: Int, columns: Int) {
+        while (recyclerView.itemDecorationCount > 0) {
+            recyclerView.removeItemDecorationAt(0)
+        }
+        val lm = recyclerView.layoutManager as? GridLayoutManager
+        if (lm != null) {
+            lm.spanCount = columns
+        } else {
+            recyclerView.layoutManager = GridLayoutManager(requireContext(), columns)
+        }
+        if (columns > 1) {
+            recyclerView.addItemDecoration(
+                GridSpacingItemDecoration(spanCount = columns, spacingPx = spacing)
+            )
+        }
+        adapter.listMode = (columns == 1)
+    }
+
 }
