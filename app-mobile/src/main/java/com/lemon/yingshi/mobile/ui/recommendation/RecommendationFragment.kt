@@ -189,7 +189,7 @@ class RecommendationFragment : Fragment() {
     /** 二改：应用列数设置 */
     private fun applyColumnCount(columns: Int) {
         binding.columnToggleButton.text = "${columns}列"
-        val recyclerView = binding.recyclerView
+        val recyclerView = binding.recommendRecycler
         val layoutManager = recyclerView.layoutManager as? GridLayoutManager
         if (layoutManager != null) {
             layoutManager.spanCount = columns

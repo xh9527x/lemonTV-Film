@@ -151,11 +151,13 @@ class MainActivity : AppCompatActivity() {
             if (destinationId == R.id.homeFragment) scrollHomeToTop()
             return
         }
-        navController.navigate(destinationId) {
+        // 二改：用 navOptions 保持返回栈干净（替代 setupWithNavController）
+        val options = androidx.navigation.navOptions {
             popUpTo(navController.graph.startDestinationId) { saveState = true }
             launchSingleTop = true
             restoreState = true
         }
+        navController.navigate(destinationId, null, options)
     }
 
     private fun syncBottomNavWithDestination() {
