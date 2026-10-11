@@ -277,7 +277,20 @@ class MacCmsHomeViewModel @Inject constructor(
                                 }
                             }
                         } else {
-                            _uiState.update { it.copy(isRecommendedLoading = false) }
+                            // 二改：无推荐数据时兜底用最新，保证顶部轮播不消失
+                            val fallback = withContext(Dispatchers.IO) {
+                                macCmsRepository.fetchLatestVods(
+                                    page = 1,
+                                    pageSize = HOME_RECOMMENDED_HOME_ITEMS
+                                )
+                            }
+                            if (generation != homeLoadGeneration) return@launch
+                            _uiState.update {
+                                it.copy(
+                                    recommendedItems = fallback.items.take(HOME_RECOMMENDED_HOME_ITEMS),
+                                    isRecommendedLoading = false
+                                )
+                            }
                         }
                     } catch (_: Exception) {
                         if (generation == homeLoadGeneration) {
