@@ -14,8 +14,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.lemon.yingshi.mobile.ui.home.GridSpacingItemDecoration
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.lemon.yingshi.mobile.R
 import com.lemon.yingshi.mobile.databinding.FragmentFilterCriteriaBinding
 import com.lemon.yingshi.mobile.ui.FilterActivity
