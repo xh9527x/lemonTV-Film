@@ -48,8 +48,9 @@ jobs:
 
       - name: Rename APK
         run: |
-          mv app-mobile/build/outputs/apk/release/app-mobile-release.apk \
-             app-mobile/build/outputs/apk/release/${{ steps.ver.outputs.apk_name }}
+          APK=$(ls app-mobile/build/outputs/apk/release/*.apk | head -n 1)
+          echo "Found: $APK"
+          mv "$APK" "app-mobile/build/outputs/apk/release/${{ steps.ver.outputs.apk_name }}"
 
       - name: Upload to dev release
         uses: softprops/action-gh-release@v2
