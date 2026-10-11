@@ -26,7 +26,8 @@
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
         <item name="windowSplashScreenIconBackgroundColor">@color/splash_background</item>
         <item name="postSplashScreenTheme">@style/Theme.LomenMobile</item>
-        <item name="android:windowBackground">@drawable/ic_splash</item>
+        <!-- 二改：windowBackground 用纯色，避免 SplashScreen 消失后又显示一次 logo -->
+        <item name="android:windowBackground">@color/splash_background</item>
         <item name="android:statusBarColor">@color/splash_background</item>
         <item name="android:navigationBarColor">@color/splash_background</item>
         <item name="android:windowLightStatusBar">true</item>
