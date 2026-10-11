@@ -1,0 +1,47 @@
+name: Auto Build APK
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+
+# 同一分支的新推送取消旧任务（含 60s 等待中的）
+concurrency:
+  group: auto-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sleep 60
+
+  build:
+    needs: wait
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Restore keystore
+        run: |
+          echo "${{ secrets.LEMONFILM_JKS_B64 }}" | base64 -d > lemonfilm.jks
+
+      - name: Build APK
+        run: |
+          chmod +x gradlew
+          ./gradlew :app-mobile:assembleRelease
+
+      - name: Upload to dev release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dev-latest
+          name: "Dev Latest"
+          prerelease: true
+          files: app-mobile/build/outputs/apk/release/*.apk
