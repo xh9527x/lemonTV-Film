@@ -46,6 +46,19 @@ class RecommendationFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // 二改：列数切换（1/2/3列）
+        binding.columnToggleButton.setOnClickListener {
+            val prefs = requireContext().getSharedPreferences("display_prefs", 0)
+            val current = prefs.getInt("grid_columns", 3)
+            val next = when (current) {
+                3 -> 2
+                2 -> 1
+                else -> 3
+            }
+            prefs.edit().putInt("grid_columns", next).apply()
+            applyColumnCount(next)
+        }
+
         // 二改：推荐页顶部高级筛选入口（同首页“更多”的筛选页）
         // 取首个顶部分类传 typeId，保证和首页一致有数据；取不到则走通用筛选
         binding.filterButton.setOnClickListener {
@@ -60,9 +73,15 @@ class RecommendationFragment : Fragment() {
             }
         }
 
+        // 二改：初始化列数
+        val prefs = requireContext().getSharedPreferences("display_prefs", 0)
+        applyColumnCount(prefs.getInt("grid_columns", 3))
+
         adapter = VodGridAdapter { vod ->
             VodUiBinder.openDetail(requireContext(), vod, viewModel::cacheVodForDetail)
         }
+        // 二改：1列模式用横图布局
+        adapter.listMode = prefs.getInt("grid_columns", 3) == 1
         val spacing = resources.getDimensionPixelSize(R.dimen.card_spacing)
         binding.recommendRecycler.apply {
             PosterGridLayout.setup(this, spacing)
@@ -165,5 +184,20 @@ class RecommendationFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    /** 二改：应用列数设置 */
+    private fun applyColumnCount(columns: Int) {
+        binding.columnToggleButton.text = "${columns}列"
+        val recyclerView = binding.recyclerView
+        val layoutManager = recyclerView.layoutManager as? GridLayoutManager
+        if (layoutManager != null) {
+            layoutManager.spanCount = columns
+            recyclerView.requestLayout()
+        }
+        if (::adapter.isInitialized) {
+            adapter.listMode = columns == 1
+            adapter.notifyDataSetChanged()
+        }
     }
 }

@@ -348,6 +348,13 @@ class VodGridAdapter(
     private var visibleColumns = 1
     private var itemSpacingPx = 0
     private var columnWidthPx = 0
+    /** 二改：1列模式用横图布局 */
+    var listMode = false
+
+    companion object {
+        private const val VIEW_TYPE_GRID = 0
+        private const val VIEW_TYPE_LIST = 1
+    }
 
     fun configureHorizontalRow(columns: Int, spacingPx: Int) {
         horizontalRow = true
@@ -394,9 +401,13 @@ class VodGridAdapter(
         notifyDataSetChanged()
     }
 
+    override fun getItemViewType(position: Int): Int =
+        if (listMode) VIEW_TYPE_LIST else VIEW_TYPE_GRID
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val layoutId = if (viewType == VIEW_TYPE_LIST) R.layout.item_vod_list else R.layout.item_vod_grid
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_vod_grid, parent, false)
+            .inflate(layoutId, parent, false)
         if (horizontalRow) {
             view.layoutParams = RecyclerView.LayoutParams(
                 resolveColumnWidth(parent),
@@ -452,27 +463,44 @@ class VodGridAdapter(
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val poster = itemView.findViewById<android.widget.ImageView>(R.id.poster_image)
+            ?: itemView.findViewById(R.id.cover_image)
         private val title = itemView.findViewById<TextView>(R.id.title_text)
         private val ratingBadge = itemView.findViewById<View>(R.id.rating_badge)
         private val ratingText = itemView.findViewById<TextView>(R.id.rating_text)
         private val tags = itemView.findViewById<android.widget.LinearLayout>(R.id.tags_container)
+        private val metaText = itemView.findViewById<TextView>(R.id.meta_text)
 
         fun bind(vod: MacCmsVodItem, onClick: (MacCmsVodItem) -> Unit) {
             title.isVisible = true
-            ratingBadge.isVisible = true
-            tags.isVisible = true
+            ratingBadge?.isVisible = true
+            tags?.isVisible = true
             title.text = vod.vodName
-            VodUiBinder.bindPoster(poster, vod)
-            VodUiBinder.bindRating(ratingBadge, ratingText, vod.vodScore)
-            VodUiBinder.bindTags(tags, vod)
+            // 二改：1列模式显示时间/集数
+            metaText?.let {
+                val time = vod.vodTime?.takeIf { t -> t.isNotBlank() } ?: ""
+                val remarks = vod.vodRemarks?.takeIf { r -> r.isNotBlank() } ?: ""
+                val meta = listOf(time, remarks).filter { it.isNotBlank() }.joinToString(" · ")
+                it.isVisible = meta.isNotBlank()
+                it.text = meta
+            }
+            if (poster != null) {
+                VodUiBinder.bindPoster(poster, vod)
+            }
+            if (ratingBadge != null && ratingText != null) {
+                VodUiBinder.bindRating(ratingBadge, ratingText, vod.vodScore)
+            }
+            if (tags != null) {
+                VodUiBinder.bindTags(tags, vod)
+            }
             itemView.setOnClickListener { onClick(vod) }
         }
 
         fun bindSkeleton() {
             title.isVisible = false
-            ratingBadge.isVisible = false
-            tags.isVisible = false
-            poster.setImageResource(R.drawable.bg_poster_card)
+            ratingBadge?.isVisible = false
+            tags?.isVisible = false
+            metaText?.isVisible = false
+            poster?.setImageResource(R.drawable.bg_poster_card)
             itemView.setOnClickListener(null)
         }
     }
