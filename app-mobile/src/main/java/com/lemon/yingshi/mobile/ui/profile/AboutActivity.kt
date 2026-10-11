@@ -138,8 +138,7 @@ class AboutActivity : AppCompatActivity() {
                 versionInfo.versionName
             )
         } else {
-            getString(R.string.about_version_stable, currentVersion) + "\n" +
-                getString(R.string.about_based_on)
+            getString(R.string.about_version_stable, currentVersion)
         }
     }
 
