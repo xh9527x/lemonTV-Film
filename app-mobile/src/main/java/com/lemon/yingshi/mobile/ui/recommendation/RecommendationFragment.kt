@@ -214,13 +214,8 @@ class RecommendationFragment : Fragment() {
         while (recyclerView.itemDecorationCount > 0) {
             recyclerView.removeItemDecorationAt(0)
         }
-        val lm = recyclerView.layoutManager as? GridLayoutManager
-        if (lm != null) {
-            // 复用已有的 GridLayoutManager，只改 spanCount（避免切换 LayoutManager 失效）
-            lm.spanCount = columns
-        } else {
-            recyclerView.layoutManager = GridLayoutManager(requireContext(), columns)
-        }
+        // 二改：每次都新建 LayoutManager，不复用（复用 spanCount 有时不生效）
+        recyclerView.layoutManager = GridLayoutManager(requireContext(), columns)
         if (columns > 1) {
             recyclerView.addItemDecoration(
                 GridSpacingItemDecoration(spanCount = columns, spacingPx = spacing)

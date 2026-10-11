@@ -274,12 +274,8 @@ class FilterResultsFragment : Fragment() {
         while (recyclerView.itemDecorationCount > 0) {
             recyclerView.removeItemDecorationAt(0)
         }
-        val lm = recyclerView.layoutManager as? GridLayoutManager
-        if (lm != null) {
-            lm.spanCount = columns
-        } else {
-            recyclerView.layoutManager = GridLayoutManager(requireContext(), columns)
-        }
+        // 二改：每次都新建 LayoutManager，不复用
+        recyclerView.layoutManager = GridLayoutManager(requireContext(), columns)
         if (columns > 1) {
             recyclerView.addItemDecoration(
                 GridSpacingItemDecoration(spanCount = columns, spacingPx = spacing)
