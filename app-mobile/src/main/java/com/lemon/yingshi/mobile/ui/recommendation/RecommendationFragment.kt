@@ -72,16 +72,8 @@ class RecommendationFragment : Fragment() {
             applyColumnCount(next)
         }
 
-        // 二改：推荐页顶部高级筛选入口（同首页“更多”的筛选页）
-        // 取首个顶部分类传 typeId，保证和首页一致有数据；取不到则走通用筛选
-        // 二改：推荐页高级筛选不传 typeId，走通用筛选（传随意 typeId 会导致结果为0）
-        binding.filterButton.setOnClickListener {
-            startActivity(
-                FilterActivity.intent(
-                    context = requireContext()
-                )
-            )
-        }
+        // 二改：去掉推荐页高级筛选（无基准分类，筛选结果为0；2026-10-11 Wu 决定移除）
+        binding.filterButton.isVisible = false
 
         // 二改：初始化列数（从偏好读取）
         val prefs = requireContext().getSharedPreferences("display_prefs", 0)
