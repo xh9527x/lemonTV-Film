@@ -44,6 +44,18 @@ class RecommendationFragment : Fragment() {
         return binding.root
     }
 
+    override fun onResume() {
+        super.onResume()
+        // 二改：返回时重新应用列数（防止 Fragment 重建后列数丢失）
+        val prefs = requireContext().getSharedPreferences("display_prefs", 0)
+        val columns = prefs.getInt("grid_columns", 3)
+        // 只有不一致时才重应用，避免无限循环
+        val lm = binding.recommendRecycler.layoutManager as? GridLayoutManager
+        if (lm != null && lm.spanCount != columns) {
+            applyColumnCount(columns)
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 

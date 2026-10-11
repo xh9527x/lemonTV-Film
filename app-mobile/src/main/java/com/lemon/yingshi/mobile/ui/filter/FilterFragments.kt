@@ -164,6 +164,19 @@ class FilterCriteriaFragment : Fragment() {
 @AndroidEntryPoint
 class FilterResultsFragment : Fragment() {
 
+    override fun onResume() {
+        super.onResume()
+        // 二改：返回时重新应用列数
+        try {
+            val prefs = requireContext().getSharedPreferences("display_prefs", 0)
+            val columns = prefs.getInt("grid_columns", 3)
+            val lm = binding.resultsRecycler.layoutManager as? GridLayoutManager
+            if (lm != null && lm.spanCount != columns) {
+                applyColumnCount(columns)
+            }
+        } catch (_: Exception) { }
+    }
+
     private var _binding: com.lemon.yingshi.mobile.databinding.FragmentFilterResultsBinding? = null
     private val binding get() = _binding!!
     private val viewModel: FilterViewModel by activityViewModels()
