@@ -83,7 +83,16 @@ class ProfileFragment : Fragment() {
         setupMenu(binding.menuSettings, android.R.drawable.ic_menu_preferences, getString(R.string.profile_menu_settings)) {
             startActivity(Intent(requireContext(), SettingsActivity::class.java))
         }
-        setupMenu(binding.menuAbout, android.R.drawable.ic_menu_info_details, getString(R.string.profile_menu_about)) {
+        // 二改：关于应用右边显示版本号
+        val versionName = try {
+            requireContext().packageManager.getPackageInfo(requireContext().packageName, 0).versionName
+        } catch (_: Exception) { "" }
+        setupMenu(
+            binding.menuAbout,
+            android.R.drawable.ic_menu_info_details,
+            getString(R.string.profile_menu_about),
+            subtitle = "v$versionName"
+        ) {
             startActivity(AboutActivity.intent(requireContext()))
         }
 
@@ -156,11 +165,17 @@ class ProfileFragment : Fragment() {
         menuBinding: ItemProfileMenuBinding,
         iconRes: Int,
         title: String,
+        subtitle: String? = null,
         onClick: () -> Unit
     ) {
         menuBinding.menuIcon.setImageResource(iconRes)
         menuBinding.menuTitle.text = title
-        menuBinding.menuSubtitle.visibility = View.GONE
+        if (subtitle != null) {
+            menuBinding.menuSubtitle.text = subtitle
+            menuBinding.menuSubtitle.visibility = View.VISIBLE
+        } else {
+            menuBinding.menuSubtitle.visibility = View.GONE
+        }
         menuBinding.root.setOnClickListener { onClick() }
     }
 
