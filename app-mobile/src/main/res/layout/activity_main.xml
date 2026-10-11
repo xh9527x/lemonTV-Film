@@ -32,7 +32,7 @@
         app:itemTextColor="@color/bottom_nav_color"
         app:itemActiveIndicatorStyle="@style/Widget.Lomen.BottomNav.ActiveIndicator"
         app:itemRippleColor="@color/ripple_highlight"
-        app:labelVisibilityMode="labeled"
+        app:labelVisibilityMode="unlabeled"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
