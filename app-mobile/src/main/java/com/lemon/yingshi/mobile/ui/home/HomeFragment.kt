@@ -289,15 +289,6 @@ class HomeFragment : Fragment() {
             sectionBinding.sectionTitle.text = section.typeName
             sectionBinding.sectionMore.isVisible = true
             sectionBinding.sectionMore.setOnClickListener {
-                // 二改：防御 typeId 无效（如“最新推荐”兜底）导致 FilterActivity 闪退
-                if (section.typeId <= 0) {
-                    android.widget.Toast.makeText(
-                        requireContext(),
-                        "该栏目暂不支持浏览更多",
-                        android.widget.Toast.LENGTH_SHORT
-                    ).show()
-                    return@setOnClickListener
-                }
                 val libraryTitle = buildLibraryTitle(section.typeName)
                 startActivity(
                     FilterActivity.intent(
