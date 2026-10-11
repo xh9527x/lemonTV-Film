@@ -2,6 +2,8 @@
 <resources>
     <style name="Text.BottomNav" parent="TextAppearance.Material3.LabelSmall">
         <item name="android:textSize">10sp</item>
+        <!-- 二改：去掉文字内边距，收紧图标-文字纵向间距 -->
+        <item name="android:includeFontPadding">false</item>
     </style>
 
     <style name="Theme.LomenMobile" parent="Theme.Material3.Dark.NoActionBar">

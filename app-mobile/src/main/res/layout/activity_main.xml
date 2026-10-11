@@ -25,6 +25,7 @@
         app:itemIconSize="22dp"
         app:itemPaddingTop="4dp"
         app:itemPaddingBottom="4dp"
+        app:activeIndicatorLabelPadding="0dp"
         app:itemTextAppearanceActive="@style/Text.BottomNav"
         app:itemTextAppearanceInactive="@style/Text.BottomNav"
         app:itemIconTint="@color/bottom_nav_color"
