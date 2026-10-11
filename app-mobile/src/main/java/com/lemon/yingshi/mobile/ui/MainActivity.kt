@@ -9,6 +9,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -169,7 +170,12 @@ class MainActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             binding.navHostFragment.updatePadding(top = systemBars.top)
-            binding.bottomNav.updatePadding(bottom = systemBars.bottom)
+            // 二改：手势条安全区改用 bottomMargin（而非内部 padding），
+            // 避免 BottomNavigationView 被撑高后图标置顶、文字沉底，中间出现大间隙。
+            binding.bottomNav.updatePadding(bottom = 0)
+            binding.bottomNav.updateLayoutParams<androidx.constraintlayout.widget.ConstraintLayout.LayoutParams> {
+                bottomMargin = systemBars.bottom
+            }
             insets
         }
         ViewCompat.requestApplyInsets(binding.root)
