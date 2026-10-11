@@ -12,6 +12,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.lemon.yingshi.mobile.R
 import com.lemon.yingshi.mobile.util.TouchFeedback
@@ -19,7 +20,7 @@ import com.lemon.yingshi.mobile.databinding.FragmentRecommendationBinding
 import com.lemon.yingshi.mobile.ui.SettingsActivity
 import com.lemon.yingshi.mobile.ui.FilterActivity
 import com.lemon.yingshi.mobile.ui.VodUiBinder
-import com.lemon.yingshi.mobile.ui.home.PosterGridLayout
+import com.lemon.yingshi.mobile.ui.home.GridSpacingItemDecoration
 import com.lemon.yingshi.mobile.ui.home.VodGridAdapter
 import com.lemon.yingshi.tv.ui.screens.recommended.RecommendedUiState
 import com.lemon.yingshi.tv.ui.screens.recommended.RecommendedViewModel
@@ -73,26 +74,29 @@ class RecommendationFragment : Fragment() {
             }
         }
 
-        // 二改：初始化列数
+        // 二改：初始化列数（从偏好读取）
         val prefs = requireContext().getSharedPreferences("display_prefs", 0)
-        applyColumnCount(prefs.getInt("grid_columns", 3))
+        val initColumns = prefs.getInt("grid_columns", 3)
 
         adapter = VodGridAdapter { vod ->
             VodUiBinder.openDetail(requireContext(), vod, viewModel::cacheVodForDetail)
         }
-        // 二改：1列模式用横图布局
-        adapter.listMode = prefs.getInt("grid_columns", 3) == 1
         val spacing = resources.getDimensionPixelSize(R.dimen.card_spacing)
         binding.recommendRecycler.apply {
-            PosterGridLayout.setup(this, spacing)
+            setupColumnLayout(this, spacing, initColumns)
             adapter = this@RecommendationFragment.adapter
             itemAnimator = null
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     binding.refreshLayout.isEnabled = !recyclerView.canScrollVertically(-1)
                     if (dy <= 0) return
-                    val layoutManager = recyclerView.layoutManager as? GridLayoutManager ?: return
-                    val lastVisible = layoutManager.findLastVisibleItemPosition()
+                    // 二改：兼容 Grid 和 Linear 两种 LayoutManager
+                    val layoutManager = recyclerView.layoutManager ?: return
+                    val lastVisible = when (layoutManager) {
+                        is GridLayoutManager -> layoutManager.findLastVisibleItemPosition()
+                        is LinearLayoutManager -> layoutManager.findLastVisibleItemPosition()
+                        else -> return
+                    }
                     if (lastVisible >= (recyclerView.adapter?.itemCount ?: 0) - 4) {
                         viewModel.loadMore()
                     }
@@ -186,18 +190,42 @@ class RecommendationFragment : Fragment() {
         _binding = null
     }
 
-    /** 二改：应用列数设置 */
+    /** 二改：应用列数设置（切换时重建 Adapter，避免 ViewHolder 类型混乱） */
     private fun applyColumnCount(columns: Int) {
         binding.columnToggleButton.text = "${columns}列"
-        val recyclerView = binding.recommendRecycler
-        val layoutManager = recyclerView.layoutManager as? GridLayoutManager
-        if (layoutManager != null) {
-            layoutManager.spanCount = columns
-            recyclerView.requestLayout()
+        val spacing = resources.getDimensionPixelSize(R.dimen.card_spacing)
+        // 重建 Adapter，确保 ViewHolder 类型正确
+        val currentData = if (::adapter.isInitialized) adapter.getCurrentData() else emptyList()
+        adapter = VodGridAdapter { vod ->
+            VodUiBinder.openDetail(requireContext(), vod, viewModel::cacheVodForDetail)
         }
-        if (::adapter.isInitialized) {
-            adapter.listMode = columns == 1
-            adapter.notifyDataSetChanged()
+        adapter.listMode = (columns == 1)
+        if (currentData.isNotEmpty()) {
+            adapter.submitList(currentData)
         }
+        setupColumnLayout(binding.recommendRecycler, spacing, columns)
+        binding.recommendRecycler.adapter = adapter
+    }
+
+    /** 二改：根据列数配置 RecyclerView（统一用 GridLayoutManager，1列即单列网格） */
+    private fun setupColumnLayout(recyclerView: RecyclerView, spacing: Int, columns: Int) {
+        // 清掉旧的 decoration
+        while (recyclerView.itemDecorationCount > 0) {
+            recyclerView.removeItemDecorationAt(0)
+        }
+        val lm = recyclerView.layoutManager as? GridLayoutManager
+        if (lm != null) {
+            // 复用已有的 GridLayoutManager，只改 spanCount（避免切换 LayoutManager 失效）
+            lm.spanCount = columns
+        } else {
+            recyclerView.layoutManager = GridLayoutManager(requireContext(), columns)
+        }
+        if (columns > 1) {
+            recyclerView.addItemDecoration(
+                GridSpacingItemDecoration(spanCount = columns, spacingPx = spacing)
+            )
+        }
+        // 1列用横图布局，2/3列用竖海报
+        adapter.listMode = (columns == 1)
     }
 }

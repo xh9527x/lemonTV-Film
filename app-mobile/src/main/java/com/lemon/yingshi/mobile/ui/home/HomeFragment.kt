@@ -373,6 +373,9 @@ class VodGridAdapter(
         submitListIfChanged(data)
     }
 
+    /** 二改：获取当前数据（列数切换时保留） */
+    fun getCurrentData(): List<MacCmsVodItem> = items.toList()
+
     fun submitListIfChanged(data: List<MacCmsVodItem>) {
         skeletonMode = false
         skeletonCount = 0
