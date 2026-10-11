@@ -6,7 +6,6 @@ on:
     paths-ignore:
       - '**.md'
 
-# 同一分支的新推送取消旧任务（含 60s 等待中的）
 concurrency:
   group: auto-build-${{ github.ref }}
   cancel-in-progress: true
@@ -29,6 +28,15 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Get version
+        id: ver
+        run: |
+          VER=$(grep 'versionName =' app-mobile/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          SHA=$(git rev-parse --short HEAD)
+          echo "version=$VER" >> $GITHUB_OUTPUT
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+          echo "apk_name=LomenMobile-dev-v${VER}-${SHA}.apk" >> $GITHUB_OUTPUT
+
       - name: Restore keystore
         run: |
           echo "${{ secrets.LEMONFILM_JKS_B64 }}" | base64 -d > lemonfilm.jks
@@ -38,10 +46,19 @@ jobs:
           chmod +x gradlew
           ./gradlew :app-mobile:assembleRelease
 
+      - name: Rename APK
+        run: |
+          mv app-mobile/build/outputs/apk/release/app-mobile-release.apk \
+             app-mobile/build/outputs/apk/release/${{ steps.ver.outputs.apk_name }}
+
       - name: Upload to dev release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: dev-latest
-          name: "Dev Latest"
+          name: "Dev v${{ steps.ver.outputs.version }} (${{ steps.ver.outputs.sha }})"
           prerelease: true
-          files: app-mobile/build/outputs/apk/release/*.apk
+          body: |
+            自动构建（推送后 60s 防抖）
+            - Commit: ${{ github.sha }}
+            - Version: ${{ steps.ver.outputs.version }}
+          files: app-mobile/build/outputs/apk/release/${{ steps.ver.outputs.apk_name }}
