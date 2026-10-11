@@ -190,14 +190,21 @@ class RecommendationFragment : Fragment() {
         _binding = null
     }
 
-    /** 二改：应用列数设置（1列用LinearLayoutManager+横图，2/3列用Grid） */
+    /** 二改：应用列数设置（切换时重建 Adapter，避免 ViewHolder 类型混乱） */
     private fun applyColumnCount(columns: Int) {
         binding.columnToggleButton.text = "${columns}列"
         val spacing = resources.getDimensionPixelSize(R.dimen.card_spacing)
-        setupColumnLayout(binding.recommendRecycler, spacing, columns)
-        if (::adapter.isInitialized) {
-            adapter.notifyDataSetChanged()
+        // 重建 Adapter，确保 ViewHolder 类型正确
+        val currentData = if (::adapter.isInitialized) adapter.getCurrentData() else emptyList()
+        adapter = VodGridAdapter { vod ->
+            VodUiBinder.openDetail(requireContext(), vod, viewModel::cacheVodForDetail)
         }
+        adapter.listMode = (columns == 1)
+        if (currentData.isNotEmpty()) {
+            adapter.submitList(currentData)
+        }
+        setupColumnLayout(binding.recommendRecycler, spacing, columns)
+        binding.recommendRecycler.adapter = adapter
     }
 
     /** 二改：根据列数配置 RecyclerView（统一用 GridLayoutManager，1列即单列网格） */
