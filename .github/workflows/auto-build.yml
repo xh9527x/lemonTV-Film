@@ -6,6 +6,9 @@ on:
     paths-ignore:
       - '**.md'
 
+permissions:
+  contents: write
+
 concurrency:
   group: auto-build-${{ github.ref }}
   cancel-in-progress: true
