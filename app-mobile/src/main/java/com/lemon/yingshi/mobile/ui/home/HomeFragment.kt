@@ -351,11 +351,6 @@ class VodGridAdapter(
     /** 二改：1列模式用横图布局 */
     var listMode = false
 
-    companion object {
-        private const val VIEW_TYPE_GRID = 0
-        private const val VIEW_TYPE_LIST = 1
-    }
-
     fun configureHorizontalRow(columns: Int, spacingPx: Int) {
         horizontalRow = true
         visibleColumns = columns.coerceAtLeast(1)
@@ -459,6 +454,9 @@ class VodGridAdapter(
 
     companion object {
         private const val PAYLOAD_WIDTH = "width"
+        // 二改：1列/多列视图类型
+        private const val VIEW_TYPE_GRID = 0
+        private const val VIEW_TYPE_LIST = 1
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
