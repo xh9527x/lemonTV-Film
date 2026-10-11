@@ -169,7 +169,6 @@
     <string name="settings_saved_servers">已保存的服务器</string>
     <string name="settings_use_server">使用</string>
     <string name="settings_edit_server">编辑</string>
-    <string name="settings_save">保存</string>
     <string name="settings_import">导入</string>
     <string name="settings_export">导出</string>
     <string name="settings_import_success">成功导入 %1$d 个服务器</string>
