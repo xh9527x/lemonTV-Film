@@ -23,9 +23,11 @@ import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.lemon.yingshi.mobile.R
 import com.lemon.yingshi.mobile.databinding.ActivityDetailBinding
+import com.lemon.yingshi.mobile.ui.player.PlaybackStatsRecorder
 import com.lemon.yingshi.mobile.ui.player.PlayerLauncher
 import com.lemon.yingshi.tv.data.local.database.entity.OfflineDownloadStatus
 import com.lemon.yingshi.tv.domain.service.OfflineDownloadService
+import com.lemon.yingshi.tv.domain.service.WatchHistoryService
 import com.lemon.yingshi.tv.domain.model.MediaType
 import com.lemon.yingshi.tv.ui.screens.detail.DetailUiState
 import com.lemon.yingshi.tv.ui.screens.detail.DetailViewModel
@@ -41,10 +43,13 @@ import kotlinx.coroutines.launch
 class DetailActivity : AppCompatActivity() {
 
     @Inject lateinit var offlineDownloadService: OfflineDownloadService
+    @Inject lateinit var watchHistoryService: WatchHistoryService
 
     private lateinit var binding: ActivityDetailBinding
     private val viewModel: DetailViewModel by viewModels()
     private lateinit var episodeAdapter: EpisodeAdapter
+    /** 二改：内嵌播放的观看历史/时长记录器 */
+    private lateinit var statsRecorder: PlaybackStatsRecorder
 
     private var plotExpanded = false
     private var actorsExpanded = false
@@ -79,6 +84,7 @@ class DetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        statsRecorder = PlaybackStatsRecorder(watchHistoryService, lifecycleScope)
 
         episodeAdapter = EpisodeAdapter { episode ->
             selectedEpisodeId = episode.id
@@ -463,9 +469,23 @@ class DetailActivity : AppCompatActivity() {
         if (target.startPosition > 0) player.seekTo(target.startPosition)
         player.prepare()
         player.play()
+        // 二改：内嵌播放同样记录观看历史与播放时长
+        statsRecorder.start(
+            player,
+            PlaybackStatsRecorder.Target(
+                mediaId = target.mediaId.orEmpty(),
+                episodeId = target.episodeId,
+                title = target.title,
+                episodeTitle = target.episodeTitle,
+                videoUrl = target.videoUrl,
+                posterUrl = target.posterUrl
+            )
+        )
     }
 
     private fun stopInlinePlayback() {
+        // 二改：停止前保存最终观看进度
+        statsRecorder.stop()
         binding.detailPlayerView.player = null
         inlinePlayer?.release()
         inlinePlayer = null
