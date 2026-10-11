@@ -47,13 +47,9 @@ class RecommendationFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         // 二改：推荐页顶部高级筛选入口（同首页“更多”的筛选页）
+        // 不传 libraryTitle/typeId，让 FilterActivity 先显示筛选条件页
         binding.filterButton.setOnClickListener {
-            startActivity(
-                FilterActivity.intent(
-                    context = requireContext(),
-                    libraryTitle = getString(R.string.advanced_filter)
-                )
-            )
+            startActivity(FilterActivity.intent(context = requireContext()))
         }
 
         adapter = VodGridAdapter { vod ->
