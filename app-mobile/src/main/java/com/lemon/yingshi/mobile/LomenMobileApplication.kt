@@ -5,6 +5,7 @@ import coil.Coil
 import coil.ImageLoader
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
+import com.lemon.yingshi.mobile.util.CrashLogHelper
 import com.lemon.yingshi.tv.domain.service.DeviceStorageProfile
 import com.lemon.yingshi.tv.domain.service.MediaStorageHelper
 import com.lemon.yingshi.tv.domain.service.OfflineDownloadManager
@@ -19,6 +20,8 @@ class LomenMobileApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // 二改：安装崩溃日志收集
+        CrashLogHelper.install(this)
         mediaStorageHelper.onApplicationColdStart()
         Coil.setImageLoader(
             ImageLoader.Builder(this)

@@ -18,6 +18,7 @@ import com.lemon.yingshi.mobile.ui.UpdateInstallCoordinator
 import com.lemon.yingshi.mobile.ui.settings.SettingsDialogs
 import com.lemon.yingshi.mobile.util.setBackNavigation
 import kotlinx.coroutines.launch
+import com.lemon.yingshi.mobile.util.CrashLogHelper
 
 @dagger.hilt.android.AndroidEntryPoint
 class AboutActivity : AppCompatActivity() {
@@ -60,6 +61,11 @@ class AboutActivity : AppCompatActivity() {
         )
 
         binding.cardVersion.root.setOnClickListener { onVersionCardClick() }
+        // 二改：长按版本号导出崩溃日志（调试用）
+        binding.cardVersion.root.setOnLongClickListener {
+            exportCrashLog()
+            true
+        }
         binding.cardStats.root.setOnClickListener { onStatsCardClick() }
     }
 
@@ -178,6 +184,31 @@ class AboutActivity : AppCompatActivity() {
             else -> "0秒"
         }
     }
+
+    /** 二改：导出崩溃日志 */
+    private fun exportCrashLog() {
+        val logFile = CrashLogHelper.latestLogFile(this)
+        if (logFile == null || !logFile.exists()) {
+            android.widget.Toast.makeText(this, "暂无崩溃日志", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        try {
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                logFile
+            )
+            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(android.content.Intent.createChooser(intent, "分享崩溃日志"))
+        } catch (e: Exception) {
+            android.widget.Toast.makeText(this, "导出失败: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     companion object {
         fun intent(context: Context): Intent = Intent(context, AboutActivity::class.java)
