@@ -50,6 +50,7 @@
     <string name="developing">功能开发中…</string>
     <string name="recommend_empty">服务器无推荐影片</string>
     <string name="recommend_total_count">共 %1$d 部</string>
+    <string name="recommend_fallback_to_latest">该源无推荐内容 · 最新 %1$d 部</string>
     <string name="configure_server_first">请先配置 MacCMS 服务器</string>
     <string name="go_settings">去设置</string>
     <string name="retry">重试</string>
@@ -167,6 +168,12 @@
     <string name="settings_qr_desc">手机与当前设备需在同一 Wi-Fi，也可在浏览器输入下方地址</string>
     <string name="settings_saved_servers">已保存的服务器</string>
     <string name="settings_use_server">使用</string>
+    <string name="settings_edit_server">编辑</string>
+    <string name="settings_save">保存</string>
+    <string name="settings_import">导入</string>
+    <string name="settings_export">导出</string>
+    <string name="settings_import_success">成功导入 %1$d 个服务器</string>
+    <string name="settings_import_failed">导入失败：文件格式不正确</string>
     <string name="settings_delete_server">删除</string>
     <string name="settings_delete_server_confirm">确定删除「%1$s」吗？删除后将从已保存列表中移除。</string>
     <string name="settings_server_current">当前</string>

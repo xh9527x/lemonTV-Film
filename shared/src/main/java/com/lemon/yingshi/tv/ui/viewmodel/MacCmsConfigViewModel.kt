@@ -105,6 +105,48 @@ class MacCmsConfigViewModel @Inject constructor(
         }
     }
 
+    /**
+     * 二改：编辑服务器节点（URL/备注名）。
+     */
+    fun updateServer(oldUrl: String, newUrl: String, name: String) {
+        viewModelScope.launch {
+            val normalizedOld = macCmsPreferences.normalizeBaseUrl(oldUrl)
+            val normalizedNew = macCmsPreferences.normalizeBaseUrl(newUrl)
+            if (normalizedNew.isBlank()) {
+                _saveMessage.value = "URL 不能为空"
+                delay(3000)
+                _saveMessage.value = null
+                return@launch
+            }
+            val wasCurrent = macCmsRepository.getServerUrl() == normalizedOld
+            macCmsPreferences.updateServerEntry(oldUrl, newUrl, name)
+            if (wasCurrent && normalizedOld != normalizedNew) {
+                categorySortPreferences.clearHomeCategoryCache()
+            }
+            _saveMessage.value = MacCmsErrorMessages.settingsSaved()
+            delay(4000)
+            _saveMessage.value = null
+        }
+    }
+
+    /**
+     * 二改：导出服务器列表为 JSON 字符串。
+     */
+    suspend fun exportServersJson(): String = withContext(Dispatchers.IO) {
+        val list = macCmsPreferences.getServerList()
+        macCmsPreferences.encodeServerListJson(list)
+    }
+
+    /**
+     * 二改：从 JSON 导入服务器列表，返回成功导入条数（-1 表示解析失败）。
+     */
+    suspend fun importServersJson(json: String): Int = withContext(Dispatchers.IO) {
+        val entries = macCmsPreferences.decodeServerListJson(json)
+        if (json.isNotBlank() && entries.isEmpty()) return@withContext -1
+        macCmsPreferences.importServerList(entries)
+        entries.size
+    }
+
     private val _testingUrl = MutableStateFlow("")
     val testingUrl: StateFlow<String> = _testingUrl.asStateFlow()
 

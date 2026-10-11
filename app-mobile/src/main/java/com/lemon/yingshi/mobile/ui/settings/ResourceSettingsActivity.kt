@@ -1,6 +1,8 @@
 package com.lemon.yingshi.mobile.ui.settings
 
 import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -8,6 +10,10 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import android.widget.LinearLayout
 import com.lemon.yingshi.mobile.R
 import com.lemon.yingshi.mobile.databinding.ActivityResourceSettingsBinding
 import com.lemon.yingshi.mobile.databinding.ItemMacCmsServerBinding
@@ -45,6 +51,90 @@ class ResourceSettingsActivity : AppCompatActivity() {
                 binding.nameInput.text?.toString().orEmpty()
             )
         }
+        // 二改：导入/导出
+        binding.exportButton.setOnClickListener { exportServers() }
+        binding.importButton.setOnClickListener { importPicker.launch("application/json") }
+    }
+
+    /** 二改：文件选择器（导入 JSON） */
+    private val importPicker = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri == null) return@registerForActivityResult
+        lifecycleScope.launch {
+            try {
+                val json = contentResolver.openInputStream(uri)
+                    ?.bufferedReader()?.readText().orEmpty()
+                val count = viewModel.importServersJson(json)
+                Toast.makeText(
+                    this@ResourceSettingsActivity,
+                    if (count >= 0) getString(R.string.settings_import_success, count)
+                    else getString(R.string.settings_import_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } catch (_: Exception) {
+                Toast.makeText(
+                    this@ResourceSettingsActivity,
+                    R.string.settings_import_failed,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    /** 二改：导出服务器列表为 JSON（系统分享） */
+    private fun exportServers() {
+        lifecycleScope.launch {
+            val json = viewModel.exportServersJson()
+            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "application/json"
+                putExtra(android.content.Intent.EXTRA_SUBJECT, "lemonfilm-servers.json")
+                putExtra(
+                    android.content.Intent.EXTRA_TEXT,
+                    json
+                )
+            }
+            startActivity(
+                android.content.Intent.createChooser(
+                    intent,
+                    getString(R.string.settings_export)
+                )
+            )
+        }
+    }
+
+    /** 二改：编辑服务器对话框 */
+    private fun showEditServerDialog(entry: MacCmsServerEntry) {
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(padding, padding / 2, padding, 0)
+        }
+        val urlLayout = TextInputLayout(this).apply {
+            hint = getString(R.string.settings_server_url_hint)
+        }
+        val urlInput = TextInputEditText(this).apply { setText(entry.url) }
+        urlLayout.addView(urlInput)
+        val nameLayout = TextInputLayout(this).apply {
+            hint = getString(R.string.settings_server_name_hint)
+        }
+        val nameInput = TextInputEditText(this).apply { setText(entry.name) }
+        nameLayout.addView(nameInput)
+        container.addView(urlLayout)
+        container.addView(nameLayout)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.settings_edit_server)
+            .setView(container)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.settings_save) { _, _ ->
+                viewModel.updateServer(
+                    oldUrl = entry.url,
+                    newUrl = urlInput.text?.toString().orEmpty(),
+                    name = nameInput.text?.toString().orEmpty()
+                )
+            }
+            .show()
     }
 
     private fun observeState() {
@@ -138,7 +228,7 @@ class ResourceSettingsActivity : AppCompatActivity() {
         currentUrl: String,
         testingUrl: String = ""
     ) {
-        binding.savedServersTitle.isVisible = list.isNotEmpty()
+        binding.savedServersHeader.isVisible = list.isNotEmpty()
         binding.serverListContainer.removeAllViews()
         list.forEach { entry ->
             val item = ItemMacCmsServerBinding.inflate(
@@ -175,6 +265,16 @@ class ResourceSettingsActivity : AppCompatActivity() {
                 binding.nameInput.setText(entry.name)
                 viewModel.selectServer(entry.url)
             }
+            // 二改：点击整行快捷切换服务器
+            item.root.setOnClickListener {
+                if (!active) {
+                    binding.urlInput.setText(entry.url)
+                    binding.nameInput.setText(entry.name)
+                    viewModel.selectServer(entry.url)
+                }
+            }
+            // 二改：编辑服务器
+            item.editButton.setOnClickListener { showEditServerDialog(entry) }
             item.deleteButton.setOnClickListener {
                 val label = entry.name.ifBlank { entry.url }
                 SettingsDialogs.showConfirmDialog(

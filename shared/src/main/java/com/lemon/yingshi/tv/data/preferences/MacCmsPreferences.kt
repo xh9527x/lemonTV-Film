@@ -228,4 +228,47 @@ class MacCmsPreferences @Inject constructor(
     }
 
     private fun encodeList(list: List<MacCmsServerEntry>): String = gson.toJson(list)
+
+    /**
+     * 二改：编辑服务器（URL 可能变更，保留原测试元数据；若编辑的是当前服务器则同步切换）。
+     */
+    suspend fun updateServerEntry(oldUrl: String, newUrl: String, name: String) {
+        dataStore.edit { prefs ->
+            val normalizedOld = normalizeBaseUrl(oldUrl)
+            val normalizedNew = normalizeBaseUrl(newUrl)
+            if (normalizedNew.isBlank()) return@edit
+            val list = decodeList(prefs[SERVER_LIST_KEY]).toMutableList()
+            val idx = list.indexOfFirst { normalizeBaseUrl(it.url) == normalizedOld }
+            val oldEntry = if (idx >= 0) list[idx] else null
+            if (idx >= 0) list.removeAt(idx)
+            val newEntry = MacCmsServerEntry(
+                url = normalizedNew,
+                name = name.trim(),
+                lastStatus = oldEntry?.lastStatus.orEmpty(),
+                version = oldEntry?.version.orEmpty(),
+                categoryCount = oldEntry?.categoryCount ?: 0,
+                apiSource = oldEntry?.apiSource.orEmpty()
+            )
+            prefs[SERVER_LIST_KEY] = encodeList(upsert(list, newEntry))
+            if (normalizeBaseUrl(prefs[SERVER_URL_KEY].orEmpty()) == normalizedOld) {
+                prefs[SERVER_URL_KEY] = normalizedNew
+            }
+        }
+    }
+
+    /** 二改：导出服务器列表为 JSON */
+    fun encodeServerListJson(list: List<MacCmsServerEntry>): String = encodeList(list)
+
+    /** 二改：解析导入的 JSON，返回有效条目（去重、清洗） */
+    fun decodeServerListJson(json: String): List<MacCmsServerEntry> = decodeList(json)
+
+    /** 二改：批量导入（与现有列表合并去重） */
+    suspend fun importServerList(entries: List<MacCmsServerEntry>) {
+        if (entries.isEmpty()) return
+        dataStore.edit { prefs ->
+            var list = decodeList(prefs[SERVER_LIST_KEY])
+            entries.forEach { list = upsert(list, it) }
+            prefs[SERVER_LIST_KEY] = encodeList(list)
+        }
+    }
 }

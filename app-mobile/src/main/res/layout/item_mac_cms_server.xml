@@ -66,6 +66,22 @@
         app:cornerRadius="18dp" />
 
     <com.google.android.material.button.MaterialButton
+        android:id="@+id/edit_button"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:layout_marginStart="6dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:minWidth="0dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:text="@string/settings_edit_server"
+        android:textColor="@color/resource_action_text"
+        android:textSize="12sp"
+        app:backgroundTint="@color/resource_action_bg"
+        app:cornerRadius="18dp" />
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/delete_button"
         android:layout_width="wrap_content"
         android:layout_height="36dp"
