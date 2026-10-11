@@ -6,44 +6,52 @@
     android:background="@color/background_dark"
     android:orientation="vertical">
 
+    <!-- 二改：两行式头部（第一行：标题+筛选；第二行：小字状态） -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:paddingHorizontal="@dimen/screen_padding"
         android:paddingTop="12dp"
         android:paddingBottom="8dp">
 
-        <TextView
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/nav_recommend"
-            android:textColor="@color/text_primary"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/nav_recommend"
+                android:textColor="@color/text_primary"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/filter_button"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minWidth="0dp"
+                android:text="@string/advanced_filter"
+                android:textSize="13sp"
+                app:icon="@drawable/ic_filter"
+                app:iconSize="16dp" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/recommend_count"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
             android:textColor="@color/text_secondary"
-            android:textSize="13sp"
+            android:textSize="11sp"
             android:visibility="gone" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/filter_button"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:minWidth="0dp"
-            android:text="@string/advanced_filter"
-            android:textSize="13sp"
-            app:icon="@drawable/ic_filter"
-            app:iconSize="16dp" />
     </LinearLayout>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout

@@ -1,0 +1,9 @@
+// 本地校验用：compileSdk 34→35（沙箱 SDK 无 34），不改项目文件
+allprojects {
+    plugins.withId('com.android.application') {
+        extensions.getByName('android').compileSdk = 35
+    }
+    plugins.withId('com.android.library') {
+        extensions.getByName('android').compileSdk = 35
+    }
+}

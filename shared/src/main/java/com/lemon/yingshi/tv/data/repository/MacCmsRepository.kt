@@ -412,7 +412,8 @@ class MacCmsRepository @Inject constructor(
         if (response.code != 1) {
             return MacCmsCategoryFetchResult(emptyList(), 0, error = response.msg)
         }
-        val items = prepareListForDisplay(getServerUrl(), response.list)
+        // 二改：列表接口无 vod_pic 时，用详情接口补全封面（同首页 enrich 逻辑）
+        val items = enrichWithDetail(getServerUrl(), response.list)
         val total = response.total
         val pageCount = if (total <= 0) 1 else ((total + pageSize - 1) / pageSize)
         return MacCmsCategoryFetchResult(
