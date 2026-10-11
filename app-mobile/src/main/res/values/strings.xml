@@ -3,6 +3,7 @@
     <string name="app_name">柠檬影院</string>
     <string name="nav_home">首页</string>
     <string name="nav_recommend">推荐</string>
+    <string name="advanced_filter">高级筛选</string>
     <string name="nav_profile">我的</string>
     <string name="search_hint">搜索影片、演员、导演…</string>
     <string name="search_history">搜索历史</string>

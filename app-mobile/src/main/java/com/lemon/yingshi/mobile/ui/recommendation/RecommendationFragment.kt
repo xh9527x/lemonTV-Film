@@ -17,6 +17,7 @@ import com.lemon.yingshi.mobile.R
 import com.lemon.yingshi.mobile.util.TouchFeedback
 import com.lemon.yingshi.mobile.databinding.FragmentRecommendationBinding
 import com.lemon.yingshi.mobile.ui.SettingsActivity
+import com.lemon.yingshi.mobile.ui.FilterActivity
 import com.lemon.yingshi.mobile.ui.VodUiBinder
 import com.lemon.yingshi.mobile.ui.home.PosterGridLayout
 import com.lemon.yingshi.mobile.ui.home.VodGridAdapter
@@ -44,6 +45,16 @@ class RecommendationFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // 二改：推荐页顶部高级筛选入口（同首页“更多”的筛选页）
+        binding.filterButton.setOnClickListener {
+            startActivity(
+                FilterActivity.intent(
+                    context = requireContext(),
+                    libraryTitle = getString(R.string.advanced_filter)
+                )
+            )
+        }
 
         adapter = VodGridAdapter { vod ->
             VodUiBinder.openDetail(requireContext(), vod, viewModel::cacheVodForDetail)

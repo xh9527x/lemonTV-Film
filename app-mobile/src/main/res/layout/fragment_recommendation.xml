@@ -30,6 +30,19 @@
             android:textColor="@color/text_secondary"
             android:textSize="13sp"
             android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/filter_button"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:minWidth="0dp"
+            android:text="@string/advanced_filter"
+            android:textSize="13sp"
+            app:icon="@drawable/ic_filter"
+            app:iconSize="16dp" />
     </LinearLayout>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
