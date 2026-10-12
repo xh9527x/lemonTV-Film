@@ -1479,8 +1479,7 @@ class MacCmsRepository @Inject constructor(
 
     private fun buildListUrl(baseUrl: String, params: MacCmsFilterParams): String {
         val query = buildString {
-            // 二改：用 ac=detail 直接取含播放地址的列表（参考 ZY-Player），省掉二次请求
-            append("$baseUrl/api.php/provide/vod/?ac=detail")
+            append("$baseUrl/api.php/provide/vod/?ac=list")
             append("&pg=${params.page}")
             append("&pagesize=${params.pageSize}")
             if (params.typeId > 0) append("&t=${params.typeId}")

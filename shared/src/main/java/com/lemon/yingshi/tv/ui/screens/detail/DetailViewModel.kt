@@ -137,6 +137,8 @@ class DetailViewModel @Inject constructor(
                 vodPlayNote = vod.vodPlayNote,
                 playerShowNames = playerNames
             )
+            // 二改：自动选择可用线路（优先m3u8，不默认线路1）
+            selectedPlaySourceIndex = findPlayableSourceIndex()
             if (macCmsPlaySources.isEmpty()) {
                 if (_uiState.value is DetailUiState.Success) {
                     _uiState.value = (_uiState.value as DetailUiState.Success).copy(
@@ -256,6 +258,26 @@ class DetailViewModel @Inject constructor(
 
     private fun hasPlayInfo(vod: MacCmsVodItem): Boolean =
         !vod.vodPlayFrom.isNullOrBlank() && !vod.vodPlayUrl.isNullOrBlank()
+
+    /**
+     * 二改：查找可用线路索引，优先含 m3u8 地址的线路。
+     * 大多数源的线路1不可播，避免默认选0。
+     */
+    private fun findPlayableSourceIndex(): Int {
+        macCmsPlaySources.forEachIndexed { index, source ->
+            val url = source.episodes.firstOrNull()?.url.orEmpty()
+            if (url.isNotBlank() && url.contains("m3u8", ignoreCase = true)) {
+                return index
+            }
+        }
+        // 没有 m3u8 时，找第一个有地址的
+        macCmsPlaySources.forEachIndexed { index, source ->
+            if (source.episodes.firstOrNull()?.url?.isNotBlank() == true) {
+                return index
+            }
+        }
+        return 0
+    }
 
     private fun buildMacCmsEpisodes(
         mediaId: String,
