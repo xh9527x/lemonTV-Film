@@ -68,16 +68,7 @@
                     app:tint="@color/primary_yellow" />
             </FrameLayout>
 
-            <ImageButton
-                android:id="@+id/player_back_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_gravity="top|start"
-                android:layout_margin="12dp"
-                android:background="@drawable/ripple_detail_icon_button"
-                android:contentDescription="@null"
-                android:src="@drawable/ic_back"
-                app:tint="@color/text_primary" />
+
 
             <ImageButton
                 android:id="@+id/player_fullscreen_button"
@@ -111,16 +102,35 @@
                 android:thumb="@drawable/bg_inline_seek_thumb"
                 android:thumbOffset="6dp" />
 
-            <TextView
-                android:id="@+id/player_time_text"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="end"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:paddingHorizontal="12dp"
                 android:paddingTop="2dp"
-                android:paddingBottom="6dp"
-                android:textColor="@color/text_secondary"
-                android:textSize="11sp" />
+                android:paddingBottom="6dp">
+
+                <!-- 二改：返回键移到时长行最左，无背景，D风格窄箭头 -->
+                <ImageButton
+                    android:id="@+id/player_back_button"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="@android:color/transparent"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_back"
+                    android:scaleX="0.8"
+                    app:tint="@color/text_primary" />
+
+                <TextView
+                    android:id="@+id/player_time_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+            </LinearLayout>
         </LinearLayout>
 
         <androidx.core.widget.NestedScrollView

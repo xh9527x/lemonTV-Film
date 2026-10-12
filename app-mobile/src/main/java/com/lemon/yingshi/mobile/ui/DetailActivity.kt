@@ -274,8 +274,8 @@ class DetailActivity : AppCompatActivity() {
             currentEpisodes = emptyList()
         }
         refreshCacheButtonState()
-        // 二改：详情加载完成自动播放（仅首次）
-        if (!hasAutoPlayed) {
+        // 二改：详情加载完成自动播放（仅首次，有数据才触发，避免空跑后永不重试）
+        if (!hasAutoPlayed && currentEpisodes.isNotEmpty()) {
             hasAutoPlayed = true
             playResume()
         }
