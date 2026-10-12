@@ -60,7 +60,8 @@ class ResourceSettingsActivity : AppCompatActivity() {
         }
         binding.importButton.setOnClickListener {
             DebugLog.breadcrumb("srvmgmt: import picker launched")
-            importPicker.launch("application/json")
+            // 二改：不过滤 MIME（手动拷入的文件可能没有 application/json 类型），靠 JSON 解析校验
+            importPicker.launch("*/*")
         }
     }
 
@@ -96,25 +97,53 @@ class ResourceSettingsActivity : AppCompatActivity() {
         }
     }
 
-    /** 二改：导出服务器列表为 JSON 文件（先写文件再调系统分享） */
+    /** 二改：导出服务器列表为 JSON 文件（存 Download，导入时文件选择器可见） */
     private fun exportServers() {
         lifecycleScope.launch {
             try {
                 val json = viewModel.exportServersJson()
                 DebugLog.breadcrumb("srvmgmt: export json ready len=${json.length}")
-                // 先写文件：时间戳命名，避免覆盖
+                // 时间戳命名，避免覆盖
                 val timeStamp =
                     SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())
                 val fileName = "lemonfilm-servers-$timeStamp.json"
-                val file = java.io.File(getExternalFilesDir(null), fileName)
-                file.writeText(json)
+                // Android 10+：存公共 Download（MediaStore，无需权限，文件选择器可见）
+                // Android 9 及以下：存应用私有目录（旧逻辑）
+                val uri = if (android.os.Build.VERSION.SDK_INT >=
+                    android.os.Build.VERSION_CODES.Q
+                ) {
+                    val values = android.content.ContentValues().apply {
+                        put(android.provider.MediaStore.Downloads.DISPLAY_NAME, fileName)
+                        put(android.provider.MediaStore.Downloads.MIME_TYPE, "application/json")
+                        put(
+                            android.provider.MediaStore.Downloads.RELATIVE_PATH,
+                            android.os.Environment.DIRECTORY_DOWNLOADS
+                        )
+                    }
+                    val contentUri = contentResolver.insert(
+                        android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                        values
+                    ) ?: throw java.io.IOException("MediaStore insert failed")
+                    contentResolver.openOutputStream(contentUri)?.use { out ->
+                        out.write(json.toByteArray())
+                    } ?: throw java.io.IOException("MediaStore write failed")
+                    contentUri
+                } else {
+                    val file = java.io.File(getExternalFilesDir(null), fileName)
+                    file.writeText(json)
+                    androidx.core.content.FileProvider.getUriForFile(
+                        this@ResourceSettingsActivity,
+                        "${packageName}.fileprovider",
+                        file
+                    )
+                }
                 DebugLog.breadcrumb("srvmgmt: export file written")
-                // 再调分享：FileProvider 授权只读
-                val uri = androidx.core.content.FileProvider.getUriForFile(
+                Toast.makeText(
                     this@ResourceSettingsActivity,
-                    "${packageName}.fileprovider",
-                    file
-                )
+                    getString(R.string.settings_export_saved, fileName),
+                    Toast.LENGTH_LONG
+                ).show()
+                // 调系统分享
                 val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                     type = "application/json"
                     putExtra(android.content.Intent.EXTRA_STREAM, uri)

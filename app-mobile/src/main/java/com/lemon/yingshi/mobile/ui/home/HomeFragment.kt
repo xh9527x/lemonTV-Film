@@ -39,6 +39,7 @@ import com.lemon.yingshi.tv.ui.screens.home.MacCmsHomeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.launch
+import com.lemon.yingshi.mobile.util.DebugLog
 
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
@@ -139,6 +140,7 @@ class HomeFragment : Fragment() {
             }
         }
         binding.scrollView.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+            DebugLog.breadcrumb("home: scroll fired y=$scrollY")
             binding.refreshLayout.canRefresh = scrollY == 0
             scheduleVisibleSectionLoad()
         }
@@ -246,6 +248,8 @@ class HomeFragment : Fragment() {
             val bottom = sectionBinding.root.bottom
             if (bottom >= scrollY - prefetchPx && top <= viewportBottom + prefetchPx) key else null
         }
+        // 二改：诊断埋点（滚动懒加载排查看到底哪一环没工作）
+        DebugLog.breadcrumb("home: visibleCheck scrollY=$scrollY vh=${scrollView.scrollView.height} total=${sectionBindings.size} hit=${keysToLoad.size}")
         viewModel.ensureSectionsLoaded(keysToLoad)
     }
 
