@@ -71,7 +71,7 @@ class MacCmsHomeViewModel @Inject constructor(
     private var cachedTaxonomy: MacCmsTaxonomy? = null
     private var cachedSectionRefs: List<MacCmsHomeSectionRef> = emptyList()
     private var cachedSectionOrder: List<String> = emptyList()
-    private val loadedSectionKeys = ConcurrentHashMap.newKeySet<String>()
+    /** 二改：进行中的加载（防重复启动）；已加载状态以 state.sections 为准，不再另维护集合 */
     private val loadingSectionKeys = ConcurrentHashMap.newKeySet<String>()
     private val sectionLoadSemaphore = Semaphore(MAX_CONCURRENT_SECTION_LOADS)
 
@@ -109,7 +109,6 @@ class MacCmsHomeViewModel @Inject constructor(
         }
         viewModelScope.launch {
             val generation = ++homeLoadGeneration
-            loadedSectionKeys.clear()
             loadingSectionKeys.clear()
             sectionEnrichTokens.clear()
 
@@ -345,8 +344,9 @@ class MacCmsHomeViewModel @Inject constructor(
         return startSectionLoads(sectionKeys, homeLoadGeneration, _uiState.value.error)
     }
 
-    /** 诊断用：该栏目是否已被标记为已加载 */
-    fun isSectionLoaded(key: String): Boolean = key in loadedSectionKeys
+    /** 二改：一套账：已加载以 state.sections 为准（有数据才算） */
+    fun isSectionLoaded(key: String): Boolean =
+        _uiState.value.sections.find { it.sectionKey == key }?.let { it.isLoaded && it.items.isNotEmpty() } ?: false
 
     /** 诊断用：该栏目是否正在加载中 */
     fun isSectionLoading(key: String): Boolean = key in loadingSectionKeys
@@ -360,7 +360,7 @@ class MacCmsHomeViewModel @Inject constructor(
         sectionConfigError: String?
     ): Int {
         val pending = sectionKeys.filter { key ->
-            key !in loadedSectionKeys && key !in loadingSectionKeys
+            key !in loadingSectionKeys && !isSectionLoaded(key)
         }
         if (pending.isEmpty()) return 0
 
@@ -414,10 +414,7 @@ class MacCmsHomeViewModel @Inject constructor(
 
             val section = buildSection(ref, result)
             if (section != null) {
-                // 二改：只有成功且有数据才标记为已加载；失败或空数据都不标记，滚动回来可重试
-                if (section.error == null && section.items.isNotEmpty()) {
-                    loadedSectionKeys.add(sectionKey)
-                }
+                // 二改：一套账：状态即真相，不再维护外部已加载集合
                 upsertSection(section.copy(isLoaded = true, isLoading = false), cachedSectionOrder)
                 persistHomeCache()
                 if (sectionNeedsPosterEnrich(section.items)) {
@@ -463,7 +460,7 @@ class MacCmsHomeViewModel @Inject constructor(
     }
 
     private fun removeEmptyPlaceholder(sectionKey: String) {
-        loadedSectionKeys.add(sectionKey)
+        // 二改：一套账：直接从状态移除，不维护外部集合；滚动时查状态无数据会重试
         _uiState.update { state ->
             state.copy(sections = state.sections.filter { it.sectionKey != sectionKey })
         }

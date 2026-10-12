@@ -256,10 +256,12 @@ class HomeFragment : Fragment() {
         if (scrollView.scrollView.height == 0) return
         val scrollY = scrollView.scrollView.scrollY
         val viewportBottom = scrollY + scrollView.scrollView.height
-        val prefetchPx = resources.displayMetrics.heightPixels / 2
+        // 二改：一套账重构：预取加大到1屏，坐标加容器偏移
+        val prefetchPx = resources.displayMetrics.heightPixels
+        val containerTop = scrollView.sectionsContainer.top
         val keysToLoad = sectionBindings.mapNotNull { (key, sectionBinding) ->
-            val top = sectionBinding.root.top
-            val bottom = sectionBinding.root.bottom
+            val top = containerTop + sectionBinding.root.top
+            val bottom = containerTop + sectionBinding.root.bottom
             if (bottom >= scrollY - prefetchPx && top <= viewportBottom + prefetchPx) key else null
         }
         // 二改：诊断埋点（滚动懒加载排查看到底哪一环没工作）
@@ -304,6 +306,8 @@ class HomeFragment : Fragment() {
                     container.addView(binding.root)
                 }
             }
+            // 二改：诊断渲染到底收到了什么数据
+            DebugLog.breadcrumb("home: render ${section.sectionKey} items=${section.items.size} loaded=${section.isLoaded} loading=${section.isLoading}")
             val sectionAdapter = sectionAdapters.getOrPut(section.sectionKey) {
                 VodGridAdapter { vod ->
                     VodUiBinder.openDetail(requireContext(), vod, viewModel::cacheVodForDetail)
