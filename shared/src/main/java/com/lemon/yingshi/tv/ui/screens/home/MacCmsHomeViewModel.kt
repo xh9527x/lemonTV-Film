@@ -308,7 +308,7 @@ class MacCmsHomeViewModel @Inject constructor(
                     .take(HOME_INITIAL_LOAD_SECTIONS)
                     .map { it.sectionKey }
                 val started = startSectionLoads(initialKeys, generation, sectionConfigError)
-                if (!started) {
+                if (started == 0) {
                     finishRefresh(generation)
                 }
             } catch (e: Exception) {
