@@ -414,8 +414,8 @@ class MacCmsHomeViewModel @Inject constructor(
 
             val section = buildSection(ref, result)
             if (section != null) {
-                // 二改：失败的不标记为已加载，滚动回来可重试；只有成功才标记
-                if (section.error == null) {
+                // 二改：只有成功且有数据才标记为已加载；失败或空数据都不标记，滚动回来可重试
+                if (section.error == null && section.items.isNotEmpty()) {
                     loadedSectionKeys.add(sectionKey)
                 }
                 upsertSection(section.copy(isLoaded = true, isLoading = false), cachedSectionOrder)

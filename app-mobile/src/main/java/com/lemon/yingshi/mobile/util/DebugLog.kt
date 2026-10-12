@@ -25,6 +25,8 @@ object DebugLog {
     private val dateFmt = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US)
     private val fileFmt = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US)
     private val lock = Any()
+    /** 二改：后台单线程写日志，避免阻塞 UI（滚动等高频调用场景） */
+    private val ioExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
 
     /** Application.onCreate 调一次 */
     fun init(dir: File) {
@@ -40,21 +42,26 @@ object DebugLog {
 
     private fun write(level: String, tag: String, msg: String, tr: Throwable?) {
         val d = dir ?: return
-        synchronized(lock) {
-            try {
-                val f = File(d, "debug.log")
-                if (f.exists() && f.length() > MAX_FILE_SIZE) {
-                    val bytes = f.readBytes()
-                    f.writeBytes(bytes.copyOfRange(bytes.size / 2, bytes.size))
+        // 时间戳在调用线程生成（SimpleDateFormat 非线程安全），I/O 丢后台线程
+        val timeStr = synchronized(lock) { dateFmt.format(Date()) }
+        val stackStr = tr?.let { android.util.Log.getStackTraceString(it) }
+        ioExecutor.execute {
+            synchronized(lock) {
+                try {
+                    val f = File(d, "debug.log")
+                    if (f.exists() && f.length() > MAX_FILE_SIZE) {
+                        val bytes = f.readBytes()
+                        f.writeBytes(bytes.copyOfRange(bytes.size / 2, bytes.size))
+                    }
+                    val sb = StringBuilder()
+                    sb.append(timeStr).append(' ')
+                        .append(level).append('/').append(tag).append(": ").append(msg).append('\n')
+                    if (stackStr != null) {
+                        sb.append(stackStr).append('\n')
+                    }
+                    f.appendText(sb.toString())
+                } catch (_: Exception) {
                 }
-                val sb = StringBuilder()
-                sb.append(dateFmt.format(Date())).append(' ')
-                    .append(level).append('/').append(tag).append(": ").append(msg).append('\n')
-                if (tr != null) {
-                    sb.append(android.util.Log.getStackTraceString(tr)).append('\n')
-                }
-                f.appendText(sb.toString())
-            } catch (_: Exception) {
             }
         }
     }

@@ -142,7 +142,6 @@ class HomeFragment : Fragment() {
             }
         }
         binding.scrollView.setOnScrollChangeListener { _, _, scrollY, _, _ ->
-            DebugLog.breadcrumb("home: scroll fired y=$scrollY")
             binding.refreshLayout.canRefresh = scrollY == 0
             scheduleVisibleSectionLoad()
         }
