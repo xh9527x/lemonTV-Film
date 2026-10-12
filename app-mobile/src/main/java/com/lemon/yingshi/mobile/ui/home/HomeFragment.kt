@@ -407,9 +407,11 @@ class VodGridAdapter(
     fun getCurrentData(): List<MacCmsVodItem> = items.toList()
 
     fun submitListIfChanged(data: List<MacCmsVodItem>) {
+        // 二改：从骨架屏切到真实数据时强制刷新，不走diff提前返回（修"有数据不显示"）
+        val wasSkeleton = skeletonMode
         skeletonMode = false
         skeletonCount = 0
-        if (items.size == data.size &&
+        if (!wasSkeleton && items.size == data.size &&
             items.zip(data).all { (left, right) -> displayKey(left) == displayKey(right) }
         ) {
             return
