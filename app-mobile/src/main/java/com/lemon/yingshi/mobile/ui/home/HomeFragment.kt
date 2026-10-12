@@ -57,6 +57,8 @@ class HomeFragment : Fragment() {
     private val sectionBindings = linkedMapOf<String, LayoutHomeSectionBinding>()
     private val sectionAdapters = linkedMapOf<String, VodGridAdapter>()
     private var pendingVisibleLoad: Runnable? = null
+    /** 二改：已记过失败埋点的分类（去重） */
+    private val loggedSectionErrors = mutableSetOf<String>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -198,6 +200,19 @@ class HomeFragment : Fragment() {
                         renderSkeletonSections(HOME_INITIAL_LOAD_SECTIONS)
                     } else {
                         renderSections(state.sections)
+                        // 二改：分类加载失败埋点（去重，只记首次）
+                        state.sections.forEach { section ->
+                            val err = section.error
+                            if (!err.isNullOrBlank() && loggedSectionErrors.add(section.sectionKey)) {
+                                DebugLog.breadcrumb("home: section failed ${section.typeName} err=$err")
+                            }
+                        }
+                        // 成功的清除失败记录，下次失败可再记
+                        state.sections.forEach { section ->
+                            if (section.error.isNullOrBlank() && section.items.isNotEmpty()) {
+                                loggedSectionErrors.remove(section.sectionKey)
+                            }
+                        }
                         scheduleVisibleSectionLoad()
                     }
                 }
@@ -249,8 +264,14 @@ class HomeFragment : Fragment() {
             if (bottom >= scrollY - prefetchPx && top <= viewportBottom + prefetchPx) key else null
         }
         // 二改：诊断埋点（滚动懒加载排查看到底哪一环没工作）
-        DebugLog.breadcrumb("home: visibleCheck scrollY=$scrollY vh=${scrollView.scrollView.height} total=${sectionBindings.size} hit=${keysToLoad.size}")
-        viewModel.ensureSectionsLoaded(keysToLoad)
+        DebugLog.breadcrumb("home: visibleCheck scrollY=$scrollY vh=${scrollView.scrollView.height} total=${sectionBindings.size} hit=${keysToLoad.size} keys=${keysToLoad.take(8)}")
+        val skippedLoaded = keysToLoad.filter { viewModel.isSectionLoaded(it) }
+        val skippedLoading = keysToLoad.filter { viewModel.isSectionLoading(it) }
+        if (skippedLoaded.isNotEmpty() || skippedLoading.isNotEmpty()) {
+            DebugLog.breadcrumb("home: filtered loaded=${skippedLoaded.take(8)} loading=${skippedLoading.take(8)}")
+        }
+        val started = viewModel.ensureSectionsLoaded(keysToLoad)
+        DebugLog.breadcrumb("home: ensureResult hit=${keysToLoad.size} started=$started")
     }
 
     private fun showEmpty(message: String, action: () -> Unit) {

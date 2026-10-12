@@ -22,6 +22,7 @@ import com.lemon.yingshi.mobile.ui.home.PosterGridLayout
 import com.lemon.yingshi.mobile.ui.home.VodGridAdapter
 import com.lemon.yingshi.mobile.ui.search.SearchUiState
 import com.lemon.yingshi.mobile.ui.search.SearchViewModel
+import com.lemon.yingshi.mobile.util.DebugLog
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -97,6 +98,7 @@ class SearchActivity : AppCompatActivity() {
 
     private fun performSearch() {
         hideKeyboard()
+        DebugLog.breadcrumb("search: triggered")
         viewModel.search()
     }
 
@@ -158,6 +160,7 @@ class SearchActivity : AppCompatActivity() {
 
         when (state) {
             is SearchUiState.Success -> {
+                DebugLog.breadcrumb("search: result total=${state.total} page=${state.page}")
                 binding.resultCount.text = getString(R.string.total_results, state.total)
                 binding.pageIndicator.text = getString(
                     R.string.page_indicator,
@@ -172,6 +175,7 @@ class SearchActivity : AppCompatActivity() {
                 adapter.submitList(state.results)
             }
             is SearchUiState.Empty -> {
+                DebugLog.breadcrumb("search: empty")
                 binding.messageText.text = getString(
                     R.string.search_empty,
                     viewModel.searchQuery.value.trim()
@@ -181,6 +185,7 @@ class SearchActivity : AppCompatActivity() {
                 binding.goSettingsButton.isVisible = false
             }
             is SearchUiState.Error -> {
+                DebugLog.breadcrumb("search: failed")
                 binding.messageText.text = state.message
                 binding.messageHint.text = getString(R.string.search_error_hint)
                 binding.messageHint.isVisible = true

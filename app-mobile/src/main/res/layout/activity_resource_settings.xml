@@ -211,23 +211,13 @@
                 android:textSize="13sp"
                 android:visibility="gone" />
 
+            <!-- 二改：导入导出常显（无服务器时也能导入） -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:visibility="gone"
-                android:id="@+id/saved_servers_header">
-
-                <TextView
-                    android:id="@+id/saved_servers_title"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/settings_saved_servers"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="13sp" />
+                android:gravity="center_vertical|end"
+                android:orientation="horizontal">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/import_button"
@@ -254,6 +244,25 @@
                     android:textSize="12sp"
                     app:icon="@drawable/ic_share"
                     app:iconSize="16dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                android:id="@+id/saved_servers_header">
+
+                <TextView
+                    android:id="@+id/saved_servers_title"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/settings_saved_servers"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
             </LinearLayout>
 
             <LinearLayout

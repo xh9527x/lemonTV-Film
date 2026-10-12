@@ -339,31 +339,37 @@ class MacCmsHomeViewModel @Inject constructor(
         }
     }
 
-    /** 滑动停顿时由 UI 调用：只加载屏幕内及邻近栏目 */
-    fun ensureSectionsLoaded(sectionKeys: List<String>) {
-        if (sectionKeys.isEmpty()) return
-        startSectionLoads(sectionKeys, homeLoadGeneration, _uiState.value.error)
+    /** 滑动停顿时由 UI 调用：只加载屏幕内及邻近栏目；返回实际启动加载的栏目数（诊断用） */
+    fun ensureSectionsLoaded(sectionKeys: List<String>): Int {
+        if (sectionKeys.isEmpty()) return 0
+        return startSectionLoads(sectionKeys, homeLoadGeneration, _uiState.value.error)
     }
 
+    /** 诊断用：该栏目是否已被标记为已加载 */
+    fun isSectionLoaded(key: String): Boolean = key in loadedSectionKeys
+
+    /** 诊断用：该栏目是否正在加载中 */
+    fun isSectionLoading(key: String): Boolean = key in loadingSectionKeys
+
     /**
-     * @return 是否启动了至少一个栏目加载协程
+     * @return 实际启动的栏目加载数
      */
     private fun startSectionLoads(
         sectionKeys: List<String>,
         generation: Int,
         sectionConfigError: String?
-    ): Boolean {
+    ): Int {
         val pending = sectionKeys.filter { key ->
             key !in loadedSectionKeys && key !in loadingSectionKeys
         }
-        if (pending.isEmpty()) return false
+        if (pending.isEmpty()) return 0
 
         pending.forEach { key ->
             viewModelScope.launch {
                 loadSection(key, generation, sectionConfigError)
             }
         }
-        return true
+        return pending.size
     }
 
     private suspend fun loadSection(
