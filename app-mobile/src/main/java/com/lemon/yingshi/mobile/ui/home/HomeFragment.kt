@@ -308,13 +308,6 @@ class HomeFragment : Fragment() {
             }
             // 二改：诊断渲染到底收到了什么数据
             DebugLog.breadcrumb("home: render ${section.sectionKey} items=${section.items.size} loaded=${section.isLoaded} loading=${section.isLoading}")
-            val sectionAdapter = sectionAdapters.getOrPut(section.sectionKey) {
-                VodGridAdapter { vod ->
-                    VodUiBinder.openDetail(requireContext(), vod, viewModel::cacheVodForDetail)
-                }.also { adapter ->
-                    setupHorizontalPosterRow(sectionBinding.sectionRecycler, adapter)
-                }
-            }
 
             sectionBinding.sectionTitle.text = section.typeName
             sectionBinding.sectionMore.isVisible = true
@@ -331,9 +324,25 @@ class HomeFragment : Fragment() {
             }
 
             when {
-                section.items.isEmpty() && (section.isLoading || !section.isLoaded) ->
+                section.items.isEmpty() && (section.isLoading || !section.isLoaded) -> {
+                    val sectionAdapter = sectionAdapters.getOrPut(section.sectionKey) {
+                        VodGridAdapter { vod ->
+                            VodUiBinder.openDetail(requireContext(), vod, viewModel::cacheVodForDetail)
+                        }.also { adapter ->
+                            setupHorizontalPosterRow(sectionBinding.sectionRecycler, adapter)
+                        }
+                    }
                     sectionAdapter.showSkeleton(HOME_SKELETON_CARD_COUNT)
-                else -> sectionAdapter.submitList(section.items)
+                }
+                else -> {
+                    // 二改：硬办法：有数据时重建Adapter，避免复用骨架屏状态卡死（修"有数据不显示"）
+                    val newAdapter = VodGridAdapter { vod ->
+                        VodUiBinder.openDetail(requireContext(), vod, viewModel::cacheVodForDetail)
+                    }
+                    setupHorizontalPosterRow(sectionBinding.sectionRecycler, newAdapter)
+                    sectionAdapters[section.sectionKey] = newAdapter
+                    newAdapter.submitList(section.items)
+                }
             }
         }
 
