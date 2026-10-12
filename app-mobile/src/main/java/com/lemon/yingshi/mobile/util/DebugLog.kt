@@ -94,4 +94,47 @@ object DebugLog {
             ?.filter { it.name.startsWith("crash-") && it.name.endsWith(".log") }
             ?.maxByOrNull { it.lastModified() }
     }
+
+    /** 二改：清空全部日志（含崩溃记录），参考 ZY-Player */
+    fun clear() {
+        val d = dir ?: return
+        synchronized(lock) {
+            try {
+                d.listFiles()?.forEach { it.delete() }
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    /** 二改：获取崩溃文件列表（按时间倒序），参考 ZY-Player */
+    fun crashFiles(): List<File> {
+        val d = dir ?: return emptyList()
+        return try {
+            d.listFiles()
+                ?.filter { it.name.startsWith("crash-") && it.name.endsWith(".log") }
+                ?.sortedByDescending { it.lastModified() }
+                .orEmpty()
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    /** 二改：读取运行日志内容，参考 ZY-Player */
+    fun readDebugLog(): String {
+        return try {
+            getDebugLogFile()?.readText().orEmpty()
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    /** 二改：读取崩溃文件内容 */
+    fun readCrashFile(name: String): String {
+        val d = dir ?: return ""
+        return try {
+            File(d, name).takeIf { it.exists() }?.readText().orEmpty()
+        } catch (_: Exception) {
+            ""
+        }
+    }
 }

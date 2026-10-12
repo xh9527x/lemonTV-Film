@@ -193,18 +193,14 @@ class AboutActivity : AppCompatActivity() {
         }
     }
 
-    /** 二改：调试日志卡点击，弹出选项 */
+    /** 二改：调试日志卡点击，跳转独立日志页（参考 ZY-Player） */
     private fun onDebugLogCardClick() {
-        val options = arrayOf("导出运行日志", "导出崩溃日志")
-        android.app.AlertDialog.Builder(this)
-            .setTitle("调试日志")
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> exportLogFile(DebugLog.getDebugLogFile(), "运行日志")
-                    1 -> exportLogFile(DebugLog.getLatestCrashFile(), "崩溃日志")
-                }
-            }
-            .show()
+        startActivity(
+            android.content.Intent(
+                this,
+                com.lemon.yingshi.mobile.ui.debug.DebugLogActivity::class.java
+            )
+        )
     }
 
     /** 二改：导出日志文件 */

@@ -192,10 +192,10 @@
         <activity
 
             android:name=".ui.profile.AboutActivity"
-
-            android:exported="false"
-
-            android:theme="@style/Theme.LomenMobile" />
+            android:exported="false" />
+        <activity
+            android:name=".ui.debug.DebugLogActivity"
+            android:exported="false" />
 
 
 
