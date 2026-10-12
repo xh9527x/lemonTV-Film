@@ -237,6 +237,8 @@ class HomeFragment : Fragment() {
     private fun loadVisibleSections() {
         val scrollView = _binding ?: return
         if (sectionBindings.isEmpty()) return
+        // 二改：布局未完成时不触发，避免误判全可见导致全量加载
+        if (scrollView.scrollView.height == 0) return
         val scrollY = scrollView.scrollView.scrollY
         val viewportBottom = scrollY + scrollView.scrollView.height
         val prefetchPx = resources.displayMetrics.heightPixels / 2

@@ -21,6 +21,7 @@ import com.lemon.yingshi.tv.data.remote.model.MacCmsConnectionResult
 import com.lemon.yingshi.tv.data.remote.model.MacCmsServerEntry
 import com.lemon.yingshi.tv.ui.viewmodel.MacCmsConfigViewModel
 import com.lemon.yingshi.mobile.util.setBackNavigation
+import com.lemon.yingshi.mobile.util.DebugLog
 import dagger.hilt.android.AndroidEntryPoint
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -37,6 +38,7 @@ class ResourceSettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        DebugLog.breadcrumb("srvmgmt: onCreate")
         binding = ActivityResourceSettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -52,20 +54,31 @@ class ResourceSettingsActivity : AppCompatActivity() {
             )
         }
         // 二改：导入/导出
-        binding.exportButton.setOnClickListener { exportServers() }
-        binding.importButton.setOnClickListener { importPicker.launch("application/json") }
+        binding.exportButton.setOnClickListener {
+            DebugLog.breadcrumb("srvmgmt: export tapped")
+            exportServers()
+        }
+        binding.importButton.setOnClickListener {
+            DebugLog.breadcrumb("srvmgmt: import picker launched")
+            importPicker.launch("application/json")
+        }
     }
 
     /** 二改：文件选择器（导入 JSON） */
     private val importPicker = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
-        if (uri == null) return@registerForActivityResult
+        if (uri == null) {
+            DebugLog.breadcrumb("srvmgmt: import picker cancelled")
+            return@registerForActivityResult
+        }
+        DebugLog.breadcrumb("srvmgmt: import file picked")
         lifecycleScope.launch {
             try {
                 val json = contentResolver.openInputStream(uri)
                     ?.bufferedReader()?.readText().orEmpty()
                 val count = viewModel.importServersJson(json)
+                DebugLog.breadcrumb("srvmgmt: import result count=$count")
                 Toast.makeText(
                     this@ResourceSettingsActivity,
                     if (count >= 0) getString(R.string.settings_import_success, count)
@@ -73,6 +86,7 @@ class ResourceSettingsActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT
                 ).show()
             } catch (_: Exception) {
+                DebugLog.breadcrumb("srvmgmt: import failed (exception)")
                 Toast.makeText(
                     this@ResourceSettingsActivity,
                     R.string.settings_import_failed,
@@ -82,24 +96,45 @@ class ResourceSettingsActivity : AppCompatActivity() {
         }
     }
 
-    /** 二改：导出服务器列表为 JSON（系统分享） */
+    /** 二改：导出服务器列表为 JSON 文件（先写文件再调系统分享） */
     private fun exportServers() {
         lifecycleScope.launch {
-            val json = viewModel.exportServersJson()
-            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                type = "application/json"
-                putExtra(android.content.Intent.EXTRA_SUBJECT, "lemonfilm-servers.json")
-                putExtra(
-                    android.content.Intent.EXTRA_TEXT,
-                    json
+            try {
+                val json = viewModel.exportServersJson()
+                DebugLog.breadcrumb("srvmgmt: export json ready len=${json.length}")
+                // 先写文件：时间戳命名，避免覆盖
+                val timeStamp =
+                    SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())
+                val fileName = "lemonfilm-servers-$timeStamp.json"
+                val file = java.io.File(getExternalFilesDir(null), fileName)
+                file.writeText(json)
+                DebugLog.breadcrumb("srvmgmt: export file written")
+                // 再调分享：FileProvider 授权只读
+                val uri = androidx.core.content.FileProvider.getUriForFile(
+                    this@ResourceSettingsActivity,
+                    "${packageName}.fileprovider",
+                    file
                 )
+                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "application/json"
+                    putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                startActivity(
+                    android.content.Intent.createChooser(
+                        intent,
+                        getString(R.string.settings_export)
+                    )
+                )
+                DebugLog.breadcrumb("srvmgmt: export chooser shown file=$fileName")
+            } catch (_: Exception) {
+                DebugLog.breadcrumb("srvmgmt: export failed (exception)")
+                Toast.makeText(
+                    this@ResourceSettingsActivity,
+                    R.string.settings_export_failed,
+                    Toast.LENGTH_SHORT
+                ).show()
             }
-            startActivity(
-                android.content.Intent.createChooser(
-                    intent,
-                    getString(R.string.settings_export)
-                )
-            )
         }
     }
 
@@ -280,7 +315,10 @@ class ResourceSettingsActivity : AppCompatActivity() {
                 SettingsDialogs.showConfirmDialog(
                     this,
                     getString(R.string.settings_delete_server_confirm, label)
-                ) { viewModel.removeServer(entry.url) }
+                ) {
+                    DebugLog.breadcrumb("srvmgmt: delete server confirmed")
+                    viewModel.removeServer(entry.url)
+                }
             }
             binding.serverListContainer.addView(item.root)
         }

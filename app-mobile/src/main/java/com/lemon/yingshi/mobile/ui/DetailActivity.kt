@@ -477,7 +477,7 @@ class DetailActivity : AppCompatActivity() {
                         ?: state?.episodes?.find { it.id == id }
                 }
                 if (episode != null) {
-                    playEpisode(episode)
+                    playEpisode(episode, viaAutoplay = true)
                     return@launch
                 }
             }
@@ -497,8 +497,10 @@ class DetailActivity : AppCompatActivity() {
         }
     }
 
-    private fun playEpisode(episode: EpisodeItem) {
-        DebugLog.breadcrumb("detail: play episode tapped")
+    private fun playEpisode(episode: EpisodeItem, viaAutoplay: Boolean = false) {
+        DebugLog.breadcrumb(
+            if (viaAutoplay) "detail: play episode (autoplay)" else "detail: play episode tapped"
+        )
         lifecycleScope.launch {
             val info = viewModel.getEpisodePlaybackInfo(episode.id) ?: return@launch
             if (info.videoUrl.isBlank()) return@launch
@@ -556,7 +558,7 @@ class DetailActivity : AppCompatActivity() {
             }
 
             override fun onPlayerError(error: PlaybackException) {
-                DebugLog.breadcrumb("player: error code=${error.errorCode}")
+                DebugLog.breadcrumb("player: error ${playerErrorName(error)}")
             }
         })
         player.setMediaItem(MediaItem.fromUri(target.videoUrl))
@@ -612,6 +614,26 @@ class DetailActivity : AppCompatActivity() {
                 }
                 delay(500)
             }
+        }
+    }
+
+    /** 二改：播放错误码转可读中文（只记类型，不记地址/标题等隐私信息） */
+    private fun playerErrorName(error: PlaybackException): String {
+        return when (error.errorCode) {
+            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED -> "网络连接失败"
+            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT -> "网络连接超时"
+            PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS -> "HTTP状态异常"
+            PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND -> "文件不存在"
+            PlaybackException.ERROR_CODE_IO_CLEARTEXT_NOT_PERMITTED -> "明文HTTP被禁"
+            PlaybackException.ERROR_CODE_IO_INVALID_HTTP_CONTENT_TYPE -> "HTTP内容类型无效"
+            PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED -> "容器格式错误"
+            PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED -> "容器不支持"
+            PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED -> "清单格式错误"
+            PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED -> "清单不支持"
+            PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED -> "解码格式不支持"
+            PlaybackException.ERROR_CODE_DECODER_INIT_FAILED -> "解码器初始化失败"
+            PlaybackException.ERROR_CODE_DRM_LICENSE_ACQUISITION_FAILED -> "DRM授权失败"
+            else -> "code=${error.errorCode}"
         }
     }
 
