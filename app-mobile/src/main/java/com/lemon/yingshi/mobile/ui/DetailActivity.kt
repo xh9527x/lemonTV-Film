@@ -17,6 +17,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -25,6 +27,7 @@ import com.lemon.yingshi.mobile.R
 import com.lemon.yingshi.mobile.databinding.ActivityDetailBinding
 import com.lemon.yingshi.mobile.ui.player.PlaybackStatsRecorder
 import com.lemon.yingshi.mobile.ui.player.PlayerLauncher
+import com.lemon.yingshi.mobile.util.DebugLog
 import com.lemon.yingshi.tv.data.local.database.entity.OfflineDownloadStatus
 import com.lemon.yingshi.tv.domain.service.OfflineDownloadService
 import com.lemon.yingshi.tv.domain.service.WatchHistoryService
@@ -59,6 +62,7 @@ class DetailActivity : AppCompatActivity() {
     private var selectedEpisodeId: String? = null
     // 二改：是否已自动播放（避免重复触发）
     private var hasAutoPlayed = false
+    private var hasLoggedAutoplaySkip = false
     private var episodeCurrentPage = 0
     private var lastEpisodeMediaId: String? = null
     private var lastPlaySourceIndex: Int? = null
@@ -90,6 +94,7 @@ class DetailActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        DebugLog.breadcrumb("detail: onCreate")
         binding = ActivityDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
         statsRecorder = PlaybackStatsRecorder(watchHistoryService, lifecycleScope)
@@ -176,8 +181,12 @@ class DetailActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     when (state) {
-                        DetailUiState.Loading -> binding.loadingIndicator.isVisible = true
+                        DetailUiState.Loading -> {
+                            DebugLog.breadcrumb("detail: loading")
+                            binding.loadingIndicator.isVisible = true
+                        }
                         is DetailUiState.Error -> {
+                            DebugLog.breadcrumb("detail: error")
                             binding.loadingIndicator.isVisible = false
                             binding.detailTitle.text = state.message
                         }
@@ -275,10 +284,17 @@ class DetailActivity : AppCompatActivity() {
         }
         refreshCacheButtonState()
         // 二改：详情加载完成自动播放（仅首次，有数据才触发，避免空跑后永不重试）
-        if (!hasAutoPlayed && currentEpisodes.isNotEmpty()) {
-            hasAutoPlayed = true
-            playResume()
+        if (!hasAutoPlayed) {
+            if (currentEpisodes.isNotEmpty()) {
+                hasAutoPlayed = true
+                DebugLog.breadcrumb("detail: autoplay triggered episodes=${currentEpisodes.size}")
+                playResume()
+            } else if (!hasLoggedAutoplaySkip) {
+                hasLoggedAutoplaySkip = true
+                DebugLog.breadcrumb("detail: autoplay skipped (no episodes)")
+            }
         }
+        DebugLog.breadcrumb("detail: render success")
 
     }
 
@@ -450,6 +466,7 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun playResume() {
+        DebugLog.breadcrumb("detail: play resume")
         lifecycleScope.launch {
             val state = viewModel.uiState.value as? DetailUiState.Success
             val showEpisodes = currentEpisodes.isNotEmpty()
@@ -481,6 +498,7 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun playEpisode(episode: EpisodeItem) {
+        DebugLog.breadcrumb("detail: play episode tapped")
         lifecycleScope.launch {
             val info = viewModel.getEpisodePlaybackInfo(episode.id) ?: return@launch
             if (info.videoUrl.isBlank()) return@launch
@@ -510,6 +528,7 @@ class DetailActivity : AppCompatActivity() {
      */
     private fun startInlinePlayback(target: InlinePlaybackTarget) {
         inlineTarget = target
+        DebugLog.breadcrumb("player: start")
         // 隐藏封面，显示播放器
         binding.playerCover.isVisible = false
         binding.detailPlayerView.isVisible = true
@@ -523,6 +542,23 @@ class DetailActivity : AppCompatActivity() {
         val player = ExoPlayer.Builder(this).build()
         inlinePlayer = player
         binding.detailPlayerView.player = player
+        // 二改：播放器状态面包屑（只记状态，不记地址/标题等隐私信息）
+        player.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                val name = when (playbackState) {
+                    Player.STATE_IDLE -> "idle"
+                    Player.STATE_BUFFERING -> "buffering"
+                    Player.STATE_READY -> "ready"
+                    Player.STATE_ENDED -> "ended"
+                    else -> "unknown"
+                }
+                DebugLog.breadcrumb("player: state=$name")
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                DebugLog.breadcrumb("player: error code=${error.errorCode}")
+            }
+        })
         player.setMediaItem(MediaItem.fromUri(target.videoUrl))
         if (target.startPosition > 0) player.seekTo(target.startPosition)
         player.prepare()
@@ -542,6 +578,7 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun stopInlinePlayback() {
+        DebugLog.breadcrumb("player: stop")
         // 二改：停止前保存最终观看进度
         statsRecorder.stop()
         // 二改：停止进度刷新，隐藏常驻进度条
@@ -610,7 +647,13 @@ class DetailActivity : AppCompatActivity() {
 
     private fun onDetailBack() {
         // 内嵌播放中：先关闭播放器回到封面；否则退出详情页
-        if (inlinePlayer != null) stopInlinePlayback() else finish()
+        if (inlinePlayer != null) {
+            DebugLog.breadcrumb("detail: back (close player)")
+            stopInlinePlayback()
+        } else {
+            DebugLog.breadcrumb("detail: back (finish)")
+            finish()
+        }
     }
 
     override fun onPause() {
