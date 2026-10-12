@@ -39,7 +39,6 @@ import com.lemon.yingshi.tv.ui.screens.home.MacCmsHomeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.launch
-import com.lemon.yingshi.mobile.util.DebugLog
 
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
@@ -303,8 +302,6 @@ class HomeFragment : Fragment() {
                 )
             }
 
-            // 二改：埋点
-            DebugLog.breadcrumb("home: render section=${section.typeName} items=${section.items.size} loading=${section.isLoading} loaded=${section.isLoaded}")
             when {
                 section.items.isEmpty() && (section.isLoading || !section.isLoaded) ->
                     sectionAdapter.showSkeleton(HOME_SKELETON_CARD_COUNT)

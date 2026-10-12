@@ -408,7 +408,10 @@ class MacCmsHomeViewModel @Inject constructor(
 
             val section = buildSection(ref, result)
             if (section != null) {
-                loadedSectionKeys.add(sectionKey)
+                // 二改：失败的不标记为已加载，滚动回来可重试；只有成功才标记
+                if (section.error == null) {
+                    loadedSectionKeys.add(sectionKey)
+                }
                 upsertSection(section.copy(isLoaded = true, isLoading = false), cachedSectionOrder)
                 persistHomeCache()
                 if (sectionNeedsPosterEnrich(section.items)) {

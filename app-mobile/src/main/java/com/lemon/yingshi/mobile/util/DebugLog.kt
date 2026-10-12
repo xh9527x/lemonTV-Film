@@ -12,12 +12,12 @@ import java.util.Locale
  * 只记录：未捕获异常堆栈、页面包屑（翻页/加载）、网络失败。
  *
  * 文件：
- * - debug.log：环形文件，上限 256KB，超限截断保留后半
+ * - debug.log：环形文件，上限 20KB，超限截断保留后半
  * - crash-*.log：崩溃单独文件，只保留最近 5 个
  */
 object DebugLog {
 
-    private const val MAX_FILE_SIZE = 256 * 1024L
+    private const val MAX_FILE_SIZE = 20 * 1024L
     private const val MAX_CRASH_FILES = 5
 
     @Volatile
